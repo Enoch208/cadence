@@ -7,11 +7,13 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "pnpm --recursive build",
+    "build": "pnpm --recursive --if-present build",
     "typecheck": "pnpm --recursive typecheck",
     "lint": "eslint .",
     "format": "prettier --write . --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude",
-    "format:check": "prettier --check . --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude"
+    "format:check": "prettier --check . --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -21,6 +23,7 @@
     "globals": "17.13.0",
     "prettier": "3.9.10",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.72.0"
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
   }
 }
