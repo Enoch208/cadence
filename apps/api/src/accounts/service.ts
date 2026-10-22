@@ -13,6 +13,7 @@ export const accountView = (row: AccountConnectionRow) => ({
   id: row.id,
   environment: row.environment,
   strikeAccountId: row.strikeAccountId,
+  credentialSource: row.credentialSource,
   status: row.status,
 });
 

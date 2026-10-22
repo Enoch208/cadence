@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { accountConnections, events, openCredential } from "@cadence/db";
-import { StrikeRejectedError } from "@cadence/strike";
+import { StrikeReadError, StrikeRejectedError } from "@cadence/strike";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { call, signIn, testApp, testKeyEncryptionKey } from "./support/app";
 import { db, resetDatabaseBetweenTests } from "./support/database";
@@ -102,6 +102,38 @@ describe("connecting a live Strike sub-account", () => {
       },
     );
   });
+
+  it("says Strike refused the key when Strike refuses it on a signed read", async () => {
+    const { app, live, cookie } = await signedInMember();
+    const keys = throwawayKeyPair();
+    live.refusal = new StrikeReadError({
+      operation: "account",
+      status: 401,
+      detail: "authentication failed",
+    });
+    const reply = await call(app, "POST", "/api/accounts", {
+      cookie,
+      body: { publicKey: keys.publicKeyHex, privateKey: keys.seedHex },
+    });
+    expect(reply).toMatchObject({ status: 422, body: { code: "KEY_NOT_ACCEPTED" } });
+  });
+
+  it("brings a disconnected account back with a new key, but leaves a paused one paused", async () => {
+    const { app, cookie } = await signedInMember();
+    const connect = () => {
+      const keys = throwawayKeyPair();
+      const body = { publicKey: keys.publicKeyHex, privateKey: keys.seedHex };
+      return call(app, "POST", "/api/accounts", { cookie, body });
+    };
+    const { id } = (await connect()).body as { id: string };
+    await db
+      .update(accountConnections)
+      .set({ status: "disconnected" })
+      .where(eq(accountConnections.id, id));
+    expect(await connect()).toMatchObject({ status: 201, body: { id, status: "active" } });
+    await call(app, "POST", `/api/accounts/${id}/pause`, { cookie });
+    expect(await connect()).toMatchObject({ status: 201, body: { id, status: "paused" } });
+  });
 });
 
 describe("replay accounts and pausing", () => {
@@ -145,6 +177,7 @@ describe("replay accounts and pausing", () => {
           id,
           environment: "replay",
           strikeAccountId: (created.body as { strikeAccountId: string }).strikeAccountId,
+          credentialSource: null,
           status: "paused",
         },
       ],

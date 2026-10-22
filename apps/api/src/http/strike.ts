@@ -6,14 +6,18 @@ import {
 } from "@cadence/strike";
 import { describeFailure, HttpError, unprocessable } from "./errors";
 
+export const refusedKey = (error: unknown): error is StrikeRejectedError | StrikeReadError =>
+  (error instanceof StrikeRejectedError || error instanceof StrikeReadError) &&
+  (error.status === 401 || error.status === 403);
+
 export async function askStrike<T>(purpose: string, work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    if (error instanceof StrikeRejectedError && (error.status === 401 || error.status === 403)) {
+    if (refusedKey(error)) {
       throw unprocessable(
         "KEY_NOT_ACCEPTED",
-        "Strike did not accept this API key. Check that it is registered for your Cadence sub-account.",
+        "Strike did not accept this API key. Check that it is registered on Strike and not revoked, then connect again.",
       );
     }
     if (error instanceof StrikeRejectedError) {
