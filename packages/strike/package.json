@@ -6,7 +6,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "probe:public": "tsx scripts/probe-public.ts",
+    "probe:account": "tsx scripts/probe-account.ts",
+    "probe:order": "tsx scripts/probe-order.ts"
   },
   "dependencies": {
     "@cadence/core": "workspace:*",

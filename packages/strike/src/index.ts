@@ -8,3 +8,4 @@ export * from "./live-client";
 export * from "./public-client";
 export * from "./replay-scenarios";
 export * from "./replay-client";
+export * from "./credentials";
