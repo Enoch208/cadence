@@ -1,9 +1,11 @@
 import {
+  planVersionDigest,
   publishedPlanSchema,
   riskPolicySchema,
   type Decision,
   type Proposal,
   type PublishedPlan,
+  type Receipt,
   type RiskPolicy,
 } from "@cadence/core";
 
@@ -76,3 +78,20 @@ export const readyDecision: Decision = {
     evaluatedAt: testNow,
   },
 };
+
+export const receiptBody = (intentId: string, realizedPnl: string | null): Receipt => ({
+  intentId,
+  planPublicId: "k7m2q9x4w8ab",
+  planVersion: 1,
+  planDigest: planVersionDigest(longPlan),
+  policyVersion: 1,
+  approved: readyProposal,
+  state: "closed",
+  entry: { size: "0.01208", averagePrice: "84212" },
+  exit: { size: "0.01208", averagePrice: "83200" },
+  feesPaid: "1.01",
+  realizedPnl,
+  exchangeOrderIds: ["1000001", "1000004"],
+  incomplete: realizedPnl === null ? ["exit fills"] : [],
+  reconciledAt: testNow,
+});

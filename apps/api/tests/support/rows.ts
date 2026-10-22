@@ -16,11 +16,20 @@ import {
   planVersions,
   plans,
   previews,
+  receipts,
+  reservations,
   riskPolicies,
   users,
 } from "@cadence/db";
 import { db } from "./database";
-import { longPlan, readyDecision, readyProposal, testNow, testPolicy } from "./fixtures";
+import {
+  longPlan,
+  readyDecision,
+  readyProposal,
+  receiptBody,
+  testNow,
+  testPolicy,
+} from "./fixtures";
 
 function only<Row>(rows: Row[], what: string): Row {
   const [row] = rows;
@@ -118,6 +127,7 @@ export async function insertIntent(
   member: Member,
   planVersionId: string,
   state: IntentState = "reserved",
+  market = "BTC-USD",
 ) {
   const preview = only(
     await db
@@ -145,7 +155,7 @@ export async function insertIntent(
       planVersionId,
       previewId: preview.id,
       policyId: member.policy.id,
-      market: "BTC-USD",
+      market,
       approved: readyProposal,
       approvedDigest: "e".repeat(64),
       state,
@@ -169,4 +179,23 @@ export async function insertOrder(intentId: string, role: OrderRole, clientOrder
     })
     .returning();
   return only(rows, "an exchange order");
+}
+
+export async function insertReservation(
+  intent: { id: string; accountConnectionId: string },
+  plannedLoss: string,
+  releasedAt: number | null = null,
+) {
+  await db.insert(reservations).values({
+    intentId: intent.id,
+    accountConnectionId: intent.accountConnectionId,
+    plannedLoss,
+    initialMargin: "203.59",
+    status: releasedAt === null ? "active" : "released",
+    releasedAt,
+  });
+}
+
+export async function insertReceipt(intentId: string, realizedPnl: string | null, builtAt: number) {
+  await db.insert(receipts).values({ intentId, body: receiptBody(intentId, realizedPnl), builtAt });
 }

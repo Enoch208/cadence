@@ -10,7 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { Decision, IntentState, Proposal } from "@cadence/core";
+import type { Decision, IntentState, Proposal, Receipt } from "@cadence/core";
 import { accountConnections, riskPolicies } from "./accounts";
 import { decimal, id, instant, oneOf, sha256Hex } from "./columns";
 import { intentStateEnum, reservationStatusEnum } from "./enums";
@@ -142,7 +142,7 @@ export const receipts = pgTable(
     intentId: uuid("intent_id")
       .notNull()
       .references(() => executionIntents.id),
-    body: jsonb("body").notNull(),
+    body: jsonb("body").$type<Receipt>().notNull(),
     builtAt: instant("built_at").notNull(),
   },
   (table) => [unique("receipts_intent_unique").on(table.intentId)],
