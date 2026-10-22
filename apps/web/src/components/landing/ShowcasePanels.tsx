@@ -7,7 +7,7 @@ import {
   formatPrice,
   formatUsd,
 } from "./example-plan";
-import { StatusPill, Ticket, TicketAction, TicketHeader, TicketRows } from "./Ticket";
+import { StatusPill, Ticket, TicketAction, TicketHeader, TicketRows } from "@/components/ui/Ticket";
 
 const planRows = [
   ["Entry range", `${formatPrice(examplePlan.entryMin)} – ${formatPrice(examplePlan.entryMax)}`],

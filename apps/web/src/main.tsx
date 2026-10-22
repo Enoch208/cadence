@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Landing } from "@/components/landing/Landing";
+import { BrowserRouter } from "react-router";
+import { App } from "@/App";
 import "@/styles/index.css";
 
 const root = document.getElementById("root");
@@ -10,6 +11,8 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <Landing />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>,
 );
