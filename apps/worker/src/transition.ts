@@ -8,6 +8,7 @@ import {
 } from "@cadence/core";
 import { executionIntents, type Tx } from "@cadence/db";
 import { recordEvent, type EventData } from "./events";
+import { queueNotification, worthAnnouncing } from "./notify-queue";
 
 export class IllegalTransitionError extends Error {
   override readonly name = "IllegalTransitionError";
@@ -62,6 +63,9 @@ export function intentCursor(tx: Tx, intent: IntentRef, at: number): IntentCurso
         type: event,
         data: { from: state, to: next, ...data },
       });
+      if (worthAnnouncing(event, next)) {
+        await queueNotification(tx, intent.id, next, at);
+      }
       state = next;
       return next;
     },

@@ -1,16 +1,39 @@
 import { positiveDecimalSchema } from "@cadence/core";
 import { z } from "zod";
 
-export const workerEnvSchema = z.object({
-  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
-  KEY_ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/),
-  KEY_ENCRYPTION_KEY_VERSION: z.coerce.number().int().positive(),
-  STRIKE_API_BASE: z
-    .url({ protocol: /^https$/ })
-    .default("https://api.strikefinance.org")
-    .transform((value) => value.replace(/\/+$/, "")),
-  CADENCE_LIVE_MAX_NOTIONAL: positiveDecimalSchema,
-});
+const webOrigin = z
+  .url({ protocol: /^https?$/ })
+  .refine((value) => {
+    const url = new URL(value);
+    return url.pathname === "/" && url.search === "" && url.hash === "" && url.username === "";
+  }, "must be an origin such as https://cadence.example, with no path")
+  .transform((value) => new URL(value).origin);
+
+export const workerEnvSchema = z
+  .object({
+    DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    KEY_ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/),
+    KEY_ENCRYPTION_KEY_VERSION: z.coerce.number().int().positive(),
+    STRIKE_API_BASE: z
+      .url({ protocol: /^https$/ })
+      .default("https://api.strikefinance.org")
+      .transform((value) => value.replace(/\/+$/, "")),
+    CADENCE_LIVE_MAX_NOTIONAL: positiveDecimalSchema,
+    TELEGRAM_BOT_TOKEN: z
+      .string()
+      .regex(/^\d+:[A-Za-z0-9_-]{30,}$/)
+      .optional(),
+    PUBLIC_WEB_ORIGIN: webOrigin.optional(),
+  })
+  .superRefine((env, context) => {
+    if (env.TELEGRAM_BOT_TOKEN !== undefined && env.PUBLIC_WEB_ORIGIN === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["PUBLIC_WEB_ORIGIN"],
+        message: "Order messages link to the web app, so they need its origin",
+      });
+    }
+  });
 
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
 
