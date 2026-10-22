@@ -5,6 +5,7 @@ import type { AppDeps, AppEnv } from "../deps";
 import { readBody } from "../http/body";
 import { uuidParam } from "../http/params";
 import { approvePreview } from "../intents/approve";
+import { listIntents } from "../intents/list";
 import { intentView, receiptView, requestEntryCancel } from "../intents/read";
 
 const approveBody = z.strictObject({ previewId: z.uuid() });
@@ -13,6 +14,9 @@ const missingIntent = "That intent does not exist.";
 export function intentRoutes(deps: AppDeps) {
   const signedIn = requireUser(deps);
   return new Hono<AppEnv>()
+    .get("/intents", signedIn, async (c) =>
+      c.json({ intents: await listIntents(deps.db, c.get("userId")) }),
+    )
     .post("/intents", signedIn, async (c) => {
       const { previewId } = await readBody(c, approveBody);
       const { id, created } = await approvePreview(deps, c.get("userId"), previewId);

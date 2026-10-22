@@ -5,6 +5,7 @@ import type { AppDeps, AppEnv } from "../deps";
 import { readBody } from "../http/body";
 import { notFound } from "../http/errors";
 import { uuidParam } from "../http/params";
+import { listAuthoredPlans } from "../plan/list";
 import { readPublicPlan, readPublicPlanVersion } from "../plan/public";
 import { createDraft, publicIdShape, publishPlan, revokePlan } from "../plan/service";
 
@@ -33,6 +34,9 @@ function versionParam(c: Context): number {
 export function planRoutes(deps: AppDeps) {
   const signedIn = requireUser(deps);
   return new Hono<AppEnv>()
+    .get("/plans", signedIn, async (c) =>
+      c.json({ plans: await listAuthoredPlans(deps.db, c.get("userId")) }),
+    )
     .post("/plans", signedIn, async (c) => {
       const body = await readBody(c, createBody);
       return c.json({ plan: await createDraft(deps, c.get("userId"), body) }, 201);
