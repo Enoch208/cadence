@@ -2,6 +2,7 @@ import { and, asc, eq, gt, inArray, notExists } from "drizzle-orm";
 import type { IntentState } from "@cadence/core";
 import { executionIntents, outbox, type Db } from "@cadence/db";
 import { cancelEntry } from "./cancel-entry";
+import { disconnectForRefusedKey, isCredentialFailure } from "./credentials";
 import type { WorkerDeps } from "./deps";
 import { logFailure, logLine } from "./log";
 import {
@@ -50,6 +51,9 @@ async function drainOutbox(deps: WorkerDeps): Promise<{ processed: number; faile
       processed += 1;
     } catch (error) {
       logFailure(`${item.kind} ${item.intentId} (attempt ${String(item.attempts)})`, error);
+      if (isCredentialFailure(error)) {
+        await disconnectForRefusedKey(deps, item.intentId, error);
+      }
       await deferItem(deps.db, item, deps.now());
       failed += 1;
     }
@@ -87,6 +91,9 @@ async function sweep(deps: WorkerDeps): Promise<{ reconciled: number; failed: nu
       reconciled += 1;
     } catch (error) {
       logFailure(`reconcile ${intent.id}`, error);
+      if (isCredentialFailure(error)) {
+        await disconnectForRefusedKey(deps, intent.id, error);
+      }
       failed += 1;
     }
   }

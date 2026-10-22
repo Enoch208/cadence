@@ -13,6 +13,8 @@ import { loadIntentContext, type IntentContext } from "./intent-context";
 import { strategyRows } from "./order-rows";
 import { enqueue } from "./outbox";
 import { recheckIntent, type Recheck, type Refusal } from "./recheck";
+import { credentialCause, isCredentialFailure } from "./credentials";
+import { disconnectConnection } from "./ledger";
 import { settle } from "./settle";
 import { lockIntentState } from "./transition";
 
@@ -111,6 +113,15 @@ async function recordSendFailure(
     if (error instanceof StrikeRejectedError) {
       const data = { status: error.status, code: error.code, detail: error.message };
       await settle(tx, context, "submitted", { event: "exchange_rejected", data }, at);
+      if (isCredentialFailure(error)) {
+        await disconnectConnection(tx, {
+          connectionId: context.connection.id,
+          intentId: context.intent.id,
+          environment: context.connection.environment,
+          at,
+          cause: credentialCause(error),
+        });
+      }
       return "rejected";
     }
     await settle(

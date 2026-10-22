@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Environment } from "@cadence/core";
 import { accountConnections, reservations, type Tx } from "@cadence/db";
 import { recordEvent } from "./events";
@@ -33,6 +33,37 @@ export async function pauseConnection(
       correlationId: args.intentId,
       environment: args.environment,
       type: "connection_paused",
+      data: { connectionId: args.connectionId, cause: args.cause },
+    });
+  }
+}
+
+export async function disconnectConnection(
+  tx: Tx,
+  args: {
+    connectionId: string;
+    intentId: string;
+    environment: Environment;
+    at: number;
+    cause: string;
+  },
+): Promise<void> {
+  const disconnected = await tx
+    .update(accountConnections)
+    .set({ status: "disconnected" })
+    .where(
+      and(
+        eq(accountConnections.id, args.connectionId),
+        inArray(accountConnections.status, ["active", "paused"]),
+      ),
+    )
+    .returning({ id: accountConnections.id });
+  if (disconnected.length > 0) {
+    await recordEvent(tx, {
+      at: args.at,
+      correlationId: args.intentId,
+      environment: args.environment,
+      type: "connection_disconnected",
       data: { connectionId: args.connectionId, cause: args.cause },
     });
   }
