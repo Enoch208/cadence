@@ -4,10 +4,34 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @cadence/web build",
   "outputDirectory": "apps/web/dist",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "cadence-topaz-eight.vercel.app"
+        }
+      ],
+      "destination": "https://cadencetrade.xyz/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.cadencetrade.xyz"
+        }
+      ],
+      "destination": "https://cadencetrade.xyz/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://cadence.76-13-10-76.sslip.io/api/:path*"
+      "destination": "https://api.cadencetrade.xyz/api/:path*"
     },
     {
       "source": "/(.*)",
