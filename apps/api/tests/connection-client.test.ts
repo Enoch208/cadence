@@ -1,4 +1,4 @@
-import { generateKeyPairSync, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
   clientForConnection,
   CredentialVaultError,
@@ -8,16 +8,9 @@ import {
 import { StrikeReadError } from "@cadence/strike";
 import { describe, expect, it } from "vitest";
 import { testNow } from "./support/fixtures";
+import { throwawayKeyPair } from "./support/keys";
 
 const keyEncryptionKey = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
-
-function throwawayKeyPair() {
-  const { publicKey, privateKey } = generateKeyPairSync("ed25519");
-  return {
-    publicKeyHex: publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("hex"),
-    seedHex: privateKey.export({ format: "der", type: "pkcs8" }).subarray(-32).toString("hex"),
-  };
-}
 
 function liveRow(keys: { publicKeyHex: string; seedHex: string }): AccountConnectionRow {
   const userId = randomUUID();

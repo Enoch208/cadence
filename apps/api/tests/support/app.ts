@@ -1,10 +1,12 @@
+import { Buffer } from "node:buffer";
 import type { MarketRules } from "@cadence/core";
+import { clientForConnection } from "@cadence/db";
 import { createApp } from "../../src/app";
 import { loadApiEnv } from "../../src/env";
 import { db } from "./database";
 import { testNow } from "./fixtures";
 import { RecordingTelegram } from "./recording-telegram";
-import { btcUsd, dogeUsdPreTrading, stubStrikeClient } from "./strike";
+import { btcUsd, dogeUsdPreTrading, ethUsd, stubLiveExchange, stubStrikeClient } from "./strike";
 import { signWebAppInitData, testBotToken, webAppFields } from "./telegram";
 
 export const testEnv = loadApiEnv({
@@ -18,20 +20,41 @@ export const testEnv = loadApiEnv({
   CADENCE_LIVE_MAX_NOTIONAL: "25",
 });
 
+const refuseNetwork: typeof fetch = () =>
+  Promise.reject(new Error("Tests never reach the network"));
+
+export const testKeyEncryptionKey = Uint8Array.from(Buffer.from(testEnv.KEY_ENCRYPTION_KEY, "hex"));
+
 export function testApp(options: { markets?: readonly MarketRules[]; now?: () => number } = {}) {
+  const now = options.now ?? (() => testNow);
+  const markets = options.markets ?? [btcUsd, ethUsd, dogeUsdPreTrading];
   const telegram = new RecordingTelegram();
-  const strike = stubStrikeClient(options.markets ?? [btcUsd, dogeUsdPreTrading]);
+  const publicStrike = stubStrikeClient(markets);
+  const live = stubLiveExchange(markets, now);
+  const replayDeps = {
+    keyEncryptionKey: testKeyEncryptionKey,
+    strikeApiBase: "https://strike.test",
+    fetch: refuseNetwork,
+    now,
+  };
   const app = createApp({
     db,
     env: testEnv,
     strike: {
-      public: () => strike,
-      forConnection: () => strike,
+      public: () => publicStrike,
+      forConnection: (connection) =>
+        connection.environment === "replay"
+          ? clientForConnection(connection, replayDeps)
+          : live.client,
+      forSigner: (signer) => {
+        live.state.signedBy.push(signer.publicKeyHex);
+        return live.client;
+      },
     },
     telegram,
-    now: options.now ?? (() => testNow),
+    now,
   });
-  return { app, telegram };
+  return { app, telegram, live: live.state };
 }
 
 export type TestApp = ReturnType<typeof testApp>["app"];

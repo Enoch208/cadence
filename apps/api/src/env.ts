@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { positiveDecimalSchema } from "@cadence/core";
 import { z } from "zod";
 
@@ -55,3 +56,6 @@ export function loadApiEnv(source: Record<string, string | undefined>): ApiEnv {
   ];
   throw new EnvError(`The API environment is incomplete. ${parts.join(" ")}`);
 }
+
+export const keyEncryptionKeyBytes = (env: Pick<ApiEnv, "KEY_ENCRYPTION_KEY">) =>
+  Uint8Array.from(Buffer.from(env.KEY_ENCRYPTION_KEY, "hex"));

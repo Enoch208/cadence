@@ -1,11 +1,12 @@
 import type { AccountConnectionRow, Db } from "@cadence/db";
-import type { StrikeClient } from "@cadence/strike";
+import type { Signer, StrikeClient, StrikePublicClient } from "@cadence/strike";
 import type { ApiEnv } from "./env";
 import type { TelegramPublisher } from "./telegram/publisher";
 
 export type StrikeClientFactory = {
-  public(): StrikeClient;
+  public(): StrikePublicClient;
   forConnection(connection: AccountConnectionRow): StrikeClient;
+  forSigner(signer: Signer): StrikeClient;
 };
 
 export type AppDeps = {

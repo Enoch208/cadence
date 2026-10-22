@@ -1,5 +1,5 @@
 import type { MarketRules } from "@cadence/core";
-import type { StrikeClient } from "@cadence/strike";
+import type { StrikeClient, SymbolConfiguration } from "@cadence/strike";
 
 const marginTiers = [
   {
@@ -25,6 +25,14 @@ export const btcUsd: MarketRules = {
   marketMinSize: "0.00001",
   minNotional: "10",
   marginTiers,
+};
+
+export const ethUsd: MarketRules = {
+  ...btcUsd,
+  symbol: "ETH-USD",
+  tickSize: "0.1",
+  minPrice: "0.1",
+  maxPrice: "20000",
 };
 
 export const dogeUsdPreTrading: MarketRules = {
@@ -56,4 +64,37 @@ export function stubStrikeClient(markets: readonly MarketRules[]): StrikeClient 
     closeReduceOnly: unused("closeReduceOnly"),
     configureSymbol: unused("configureSymbol"),
   };
+}
+
+export type StubLiveExchange = ReturnType<typeof stubLiveExchange>;
+
+export function stubLiveExchange(markets: readonly MarketRules[], now: () => number) {
+  const state = {
+    accountId: "strike-sub-42",
+    refusal: null as Error | null,
+    configured: [] as { symbol: string; settings: SymbolConfiguration }[],
+    signedBy: [] as string[],
+  };
+  const client: StrikeClient = {
+    ...stubStrikeClient(markets),
+    accountState: (symbol) =>
+      state.refusal === null
+        ? Promise.resolve({
+            account: {
+              accountId: state.accountId,
+              environment: "live",
+              availableBalance: "250",
+              observedAt: now(),
+            },
+            positions: [],
+            openOrders: [],
+            symbolSettings: { symbol, marginMode: "cross", leverage: 10 },
+          })
+        : Promise.reject(state.refusal),
+    configureSymbol: (symbol, settings) => {
+      state.configured.push({ symbol, settings });
+      return Promise.resolve();
+    },
+  };
+  return { state, client };
 }

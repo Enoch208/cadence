@@ -5,9 +5,11 @@ import { requireSameOrigin } from "./auth/middleware";
 import type { AppDeps, AppEnv } from "./deps";
 import { limitBodySize } from "./http/body";
 import { describeFailure, HttpError } from "./http/errors";
+import { accountRoutes } from "./routes/accounts";
 import { authRoutes } from "./routes/auth";
 import { communityRoutes } from "./routes/communities";
 import { planRoutes } from "./routes/plans";
+import { policyRoutes } from "./routes/policies";
 
 export function createApp(deps: AppDeps) {
   return new Hono<AppEnv>()
@@ -20,6 +22,8 @@ export function createApp(deps: AppDeps) {
     .route("/api", authRoutes(deps))
     .route("/api", communityRoutes(deps))
     .route("/api", planRoutes(deps))
+    .route("/api", accountRoutes(deps))
+    .route("/api", policyRoutes(deps))
     .notFound((c) =>
       c.json({ code: "NOT_FOUND", message: "There is nothing at this address." }, 404),
     )
