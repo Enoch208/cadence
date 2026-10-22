@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/ui/BrandMark";
 
 const destinations = [
   { to: "/app", label: "Dashboard" },
-  { to: "/author", label: "Publish a plan" },
+  { to: "/author", label: "Publish" },
   { to: "/account", label: "Accounts" },
 ] as const;
 
