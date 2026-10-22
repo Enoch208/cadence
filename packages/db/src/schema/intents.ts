@@ -10,21 +10,12 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { Decision, IntentState, Proposal, Receipt } from "@cadence/core";
+import { terminalIntentStates, type Decision, type Proposal, type Receipt } from "@cadence/core";
 import { accountConnections, riskPolicies } from "./accounts";
 import { decimal, id, instant, oneOf, sha256Hex } from "./columns";
 import { intentStateEnum, reservationStatusEnum } from "./enums";
 import { users } from "./people";
 import { planVersions } from "./plans";
-
-const terminalStates = [
-  "blocked",
-  "rejected",
-  "unfilled",
-  "canceled",
-  "expired",
-  "closed",
-] as const satisfies readonly IntentState[];
 
 export const previews = pgTable(
   "previews",
@@ -96,7 +87,7 @@ export const executionIntents = pgTable(
     ),
     uniqueIndex("execution_intents_account_market_open_unique")
       .on(table.accountConnectionId, table.market)
-      .where(sql`not (${oneOf(table.state, terminalStates)})`),
+      .where(sql`not (${oneOf(table.state, terminalIntentStates)})`),
     index("execution_intents_user_idx").on(table.userId),
     check("execution_intents_approved_digest_is_sha256", sha256Hex(table.approvedDigest)),
     check(

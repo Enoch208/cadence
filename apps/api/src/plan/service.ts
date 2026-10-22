@@ -41,7 +41,7 @@ export async function createDraft(
   input: { communityId: string; fields: Record<string, unknown> },
 ) {
   await requirePublisher(deps.db, input.communityId, userId);
-  const draft = await admissiblePlan(deps, input.fields);
+  const draft = await admissiblePlan(deps, input.fields, null);
   return deps.db.transaction(async (tx) => {
     const [plan] = await tx
       .insert(plans)
@@ -129,7 +129,7 @@ export async function publishPlan(
   if (plan.status === "revoked") {
     throw revokedPlan();
   }
-  const payload = await admissiblePlan(deps, fields ?? plan.draft);
+  const payload = await admissiblePlan(deps, fields ?? plan.draft, plan.draft.environment);
   const { version, digest } = await insertNextVersion(deps, userId, planId, payload);
   const posted = await postPlanCard(deps, { plan, community, payload, version, userId });
   return { publicId: plan.publicId, version, digest, card: { posted } };

@@ -20,7 +20,7 @@ export function planCard(args: {
 }): PlanCard {
   const { plan, version } = args;
   const heading = [
-    `${args.communityName} · ${plan.market} ${plan.direction}`,
+    `${plan.environment === "replay" ? "Replay: " : ""}${args.communityName} · ${plan.market} ${plan.direction}`,
     ...(version > 1 ? [`Version ${String(version)} replaces version ${String(version - 1)}.`] : []),
   ];
   const terms = [

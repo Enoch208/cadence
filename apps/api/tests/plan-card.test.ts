@@ -54,3 +54,11 @@ describe("the Telegram plan card", () => {
     expect(text).not.toMatch(/\n\n\n/);
   });
 });
+
+describe("the Telegram card of a replay plan", () => {
+  it("starts with Replay:", () => {
+    const replay = publishedPlanSchema.parse({ ...longPlan, environment: "replay" });
+    expect(card(1, replay).text).toMatch(/^Replay: Range Traders · BTC-USD long/);
+    expect(card(1).text).toMatch(/^Range Traders · BTC-USD long/);
+  });
+});

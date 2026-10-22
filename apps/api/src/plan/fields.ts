@@ -1,8 +1,15 @@
-import type { MarketRules, PublishedPlan } from "@cadence/core";
-import { publishedPlanSchema } from "@cadence/core";
+import {
+  isOrderablePrice,
+  publishedPlanSchema,
+  type Environment,
+  type MarketRules,
+  type PublishedPlan,
+} from "@cadence/core";
 import type { AppDeps } from "../deps";
 import { describeIssues } from "../http/body";
 import { describeFailure, HttpError, unprocessable } from "../http/errors";
+
+const pricedFields = ["entryMin", "entryMax", "stopPrice", "targetPrice"] as const;
 
 async function strikeMarkets(deps: Pick<AppDeps, "strike">): Promise<readonly MarketRules[]> {
   try {
@@ -17,11 +24,35 @@ async function strikeMarkets(deps: Pick<AppDeps, "strike">): Promise<readonly Ma
   }
 }
 
+function withEnvironment(fields: Record<string, unknown>, fixed: Environment | null) {
+  if (fixed === null) {
+    return { environment: "live", ...fields };
+  }
+  if (fields.environment !== undefined && fields.environment !== fixed) {
+    throw unprocessable(
+      "ENVIRONMENT_FIXED",
+      `This plan runs in ${fixed}. Publish a new plan to use another environment.`,
+    );
+  }
+  return { ...fields, environment: fixed };
+}
+
+function requireOrderablePrices(plan: PublishedPlan, market: MarketRules): void {
+  const field = pricedFields.find((name) => !isOrderablePrice(plan[name], market));
+  if (field !== undefined) {
+    throw unprocessable(
+      "PRICE_NOT_ORDERABLE",
+      `${field}: ${plan[field]} is not a price Strike accepts. ${market.symbol} prices go in steps of ${market.tickSize} from ${market.minPrice} to ${market.maxPrice}.`,
+    );
+  }
+}
+
 export async function admissiblePlan(
   deps: Pick<AppDeps, "strike" | "now">,
   fields: Record<string, unknown>,
+  fixedEnvironment: Environment | null,
 ): Promise<PublishedPlan> {
-  const parsed = publishedPlanSchema.safeParse({ ...fields, environment: "live" });
+  const parsed = publishedPlanSchema.safeParse(withEnvironment(fields, fixedEnvironment));
   if (!parsed.success) {
     throw unprocessable("PLAN_INVALID", describeIssues(parsed.error));
   }
@@ -39,5 +70,6 @@ export async function admissiblePlan(
       `${plan.market} is not open for new positions on Strike right now.`,
     );
   }
+  requireOrderablePrices(plan, market);
   return plan;
 }

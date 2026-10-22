@@ -1,4 +1,4 @@
-import { call, signIn, type TestApp } from "./app";
+import { call, signIn, testApp, type TestApp } from "./app";
 import type { RecordingTelegram } from "./recording-telegram";
 
 export const groupChatId = "-1001234567890";
@@ -47,3 +47,16 @@ export async function createDraft(
   }
   return (reply.body as { plan: Draft }).plan;
 }
+
+export async function planWithDraft(fields: Record<string, unknown> = planFields()) {
+  const { app, telegram } = testApp();
+  const { cookie, communityId } = await curatorWithCommunity(app, telegram);
+  const draft = await createDraft(app, cookie, communityId, fields);
+  return { app, telegram, cookie, communityId, draft };
+}
+
+export const publish = (app: TestApp, cookie: string, id: string, body?: unknown) =>
+  call(app, "POST", `/api/plans/${id}/publish`, {
+    cookie,
+    ...(body === undefined ? {} : { body }),
+  });
