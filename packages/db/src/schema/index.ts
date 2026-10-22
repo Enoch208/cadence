@@ -6,3 +6,4 @@ export * from "./builder-challenges";
 export * from "./intents";
 export * from "./orders";
 export * from "./outbox";
+export * from "./notifications";

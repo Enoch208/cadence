@@ -26,6 +26,9 @@ export type OutboxKind = (typeof outboxKinds)[number];
 export const outboxStatuses = ["pending", "claimed", "done"] as const;
 export type OutboxStatus = (typeof outboxStatuses)[number];
 
+export const notificationStatuses = ["pending", "claimed", "sent", "failed", "superseded"] as const;
+export type NotificationStatus = (typeof notificationStatuses)[number];
+
 export const environmentEnum = pgEnum("environment", environments);
 export const intentStateEnum = pgEnum("intent_state", intentStates);
 export const orderRoleEnum = pgEnum("order_role", orderRoles);
@@ -38,3 +41,4 @@ export const walletChainEnum = pgEnum("wallet_chain", walletChains);
 export const reservationStatusEnum = pgEnum("reservation_status", reservationStatuses);
 export const outboxKindEnum = pgEnum("outbox_kind", outboxKinds);
 export const outboxStatusEnum = pgEnum("outbox_status", outboxStatuses);
+export const notificationStatusEnum = pgEnum("notification_status", notificationStatuses);

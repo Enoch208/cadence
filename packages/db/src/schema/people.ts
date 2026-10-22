@@ -19,6 +19,7 @@ export const users = pgTable(
     displayName: text("display_name").notNull(),
     telegramUsername: text("telegram_username"),
     sessionEpoch: integer("session_epoch").notNull().default(0),
+    botStartedAt: instant("bot_started_at"),
     createdAt: instant("created_at").notNull(),
   },
   (table) => [
