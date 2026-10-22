@@ -36,7 +36,7 @@ async function readWith(drafter: PlanDrafter, request: SetupRequest) {
     if (error instanceof DraftingDeclinedError) {
       throw unprocessable(
         "DRAFT_DECLINED",
-        "Claude declined to read that message. Fill the plan in by hand.",
+        "The model declined to read that message. Fill the plan in by hand.",
       );
     }
     if (error instanceof DraftingUnavailableError) {

@@ -1,6 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { serve } from "@hono/node-server";
 import { Api } from "grammy";
+import OpenAI from "openai";
 import { clientForConnection, createDb, strikeTimeoutMs } from "@cadence/db";
 import {
   createBuilderConnectClient,
@@ -9,7 +9,7 @@ import {
   createServerClock,
 } from "@cadence/strike";
 import { createApp } from "./app";
-import { createClaudeDrafter } from "./drafting/claude";
+import { createOpenAiDrafter } from "./drafting/openai";
 import { EnvError, keyEncryptionKeyBytes, loadApiEnv, type ApiEnv } from "./env";
 import { createGrammyPublisher } from "./telegram/publisher";
 
@@ -48,10 +48,10 @@ const app = createApp({
   },
   telegram: createGrammyPublisher(new Api(env.TELEGRAM_BOT_TOKEN)),
   drafter:
-    env.ANTHROPIC_API_KEY === undefined
+    env.OPENAI_API_KEY === undefined
       ? null
-      : createClaudeDrafter(
-          new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 45_000, maxRetries: 1 }),
+      : createOpenAiDrafter(
+          new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 45_000, maxRetries: 1 }),
         ),
   builderConnect:
     env.STRIKE_BUILDER_CODE === undefined

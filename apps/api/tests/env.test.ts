@@ -77,13 +77,13 @@ describe("API environment", () => {
     );
   });
 
-  it("leaves drafting off without an Anthropic key and refuses a malformed one", () => {
-    expect(loadApiEnv({ ...complete, ANTHROPIC_API_KEY: "" }).ANTHROPIC_API_KEY).toBeUndefined();
-    const key = `sk-ant-api03-${"a".repeat(40)}`;
-    expect(loadApiEnv({ ...complete, ANTHROPIC_API_KEY: key }).ANTHROPIC_API_KEY).toBe(key);
-    const message = failure({ ...complete, ANTHROPIC_API_KEY: "not-an-anthropic-key-at-all" });
-    expect(message).toContain("Invalid: ANTHROPIC_API_KEY");
-    expect(message).not.toContain("not-an-anthropic-key-at-all");
+  it("leaves drafting off without an OpenAI key and refuses a malformed one", () => {
+    expect(loadApiEnv({ ...complete, OPENAI_API_KEY: "" }).OPENAI_API_KEY).toBeUndefined();
+    const key = `sk-proj-${"a".repeat(40)}`;
+    expect(loadApiEnv({ ...complete, OPENAI_API_KEY: key }).OPENAI_API_KEY).toBe(key);
+    const message = failure({ ...complete, OPENAI_API_KEY: "not-an-openai-key-at-all" });
+    expect(message).toContain("Invalid: OPENAI_API_KEY");
+    expect(message).not.toContain("not-an-openai-key-at-all");
   });
 
   it("leaves wallet connect off without a builder code and refuses one Strike cannot hold", () => {

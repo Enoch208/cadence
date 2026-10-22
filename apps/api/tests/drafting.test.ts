@@ -61,7 +61,7 @@ describe("drafting a plan from a curator's message", () => {
   });
 
   it("needs a signed-in member", async () => {
-    const { drafter, requests } = drafterAnswering({ setup, model: "claude-opus-5-5" });
+    const { drafter, requests } = drafterAnswering({ setup, model: "gpt-6.1-sol" });
     const { app } = testApp({ drafter });
     expect(await call(app, "GET", "/api/drafting")).toMatchObject({ status: 401 });
     expect(await call(app, "POST", "/api/drafting/plan", { body: { text } })).toMatchObject({
@@ -73,7 +73,7 @@ describe("drafting a plan from a curator's message", () => {
   it("fills what the message verifiably states and lists the rest as missing", async () => {
     const { app, cookie, draft, requests } = await signedInWith({
       setup,
-      model: "claude-opus-5-5",
+      model: "gpt-6.1-sol",
     });
     expect(await call(app, "GET", "/api/drafting", { cookie })).toMatchObject({
       body: { available: true },
@@ -82,7 +82,7 @@ describe("drafting a plan from a curator's message", () => {
       status: 200,
       headers: expect.any(Headers) as unknown,
       body: {
-        model: "claude-opus-5-5",
+        model: "gpt-6.1-sol",
         draft: {
           filled: {
             market: { value: "BTC-USD", quote: "BTC long" },
@@ -104,7 +104,7 @@ describe("drafting a plan from a curator's message", () => {
   it("stores and publishes nothing", async () => {
     const { app, telegram, cookie, draft } = await signedInWith({
       setup,
-      model: "claude-opus-5-5",
+      model: "gpt-6.1-sol",
     });
     expect((await draft()).status).toBe(200);
     expect(await call(app, "GET", "/api/plans", { cookie })).toMatchObject({
@@ -117,8 +117,8 @@ describe("drafting a plan from a curator's message", () => {
     ["an empty message", { text: "   " }],
     ["a message over 4,000 characters", { text: "a".repeat(4001) }],
     ["no message", {}],
-  ])("refuses %s without asking Claude", async (_, body) => {
-    const { draft, requests } = await signedInWith({ setup, model: "claude-opus-5-5" });
+  ])("refuses %s without asking the model", async (_, body) => {
+    const { draft, requests } = await signedInWith({ setup, model: "gpt-6.1-sol" });
     expect(await draft(body)).toMatchObject({ status: 400, body: { code: "INVALID_REQUEST" } });
     expect(requests).toEqual([]);
   });
@@ -126,7 +126,7 @@ describe("drafting a plan from a curator's message", () => {
   it.each([
     [
       "a message that is not a setup",
-      { setup: { ...setup, isTradeSetup: false }, model: "claude-opus-5-5" },
+      { setup: { ...setup, isTradeSetup: false }, model: "gpt-6.1-sol" },
       422,
       "NOT_A_SETUP",
     ],
@@ -138,7 +138,7 @@ describe("drafting a plan from a curator's message", () => {
   });
 
   it("limits how often one member drafts, without slowing anyone else", async () => {
-    const { app, draft } = await signedInWith({ setup, model: "claude-opus-5-5" });
+    const { app, draft } = await signedInWith({ setup, model: "gpt-6.1-sol" });
     for (let attempt = 0; attempt < 12; attempt += 1) {
       expect((await draft()).status).toBe(200);
     }

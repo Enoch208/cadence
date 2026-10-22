@@ -26,9 +26,9 @@ export const apiEnvSchema = z.object({
     .transform((value) => value.replace(/\/+$/, "")),
   CADENCE_LIVE_MAX_NOTIONAL: positiveDecimalSchema,
   STRIKE_BUILDER_CODE: builderCodeSchema.optional(),
-  ANTHROPIC_API_KEY: z
+  OPENAI_API_KEY: z
     .string()
-    .regex(/^sk-ant-[\w-]{20,}$/)
+    .regex(/^sk-[\w-]{20,}$/)
     .optional(),
 });
 
