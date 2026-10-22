@@ -40,7 +40,9 @@ export function AccountPicker({ accounts, selected, onSelect }: AccountPickerPro
               }}
               className="size-4 accent-ink"
             />
-            Strike account {account.strikeAccountId}
+            {account.environment === "replay"
+              ? `Replay account …${account.strikeAccountId.slice(-6)}`
+              : `Strike account ${account.strikeAccountId}`}
           </span>
           <EnvironmentBadge environment={account.environment} />
         </label>

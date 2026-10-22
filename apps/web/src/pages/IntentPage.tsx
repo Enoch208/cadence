@@ -6,6 +6,7 @@ import { EnvironmentBadge } from "@/components/app/EnvironmentBadge";
 import { IntentTimeline } from "@/components/app/IntentTimeline";
 import { LoginGate } from "@/components/app/LoginGate";
 import { Loading, Problem } from "@/components/app/Notice";
+import { OrdersPanel } from "@/components/app/OrdersPanel";
 import { TicketRows } from "@/components/ui/Ticket";
 import { apiRequest } from "@/lib/api/client";
 import { intentSchema, type IntentView } from "@/lib/api/schemas";
@@ -81,14 +82,7 @@ function IntentDetail({ intentId }: { intentId: string }) {
       </Panel>
       <Panel>
         <h2 className="t-card">On Strike</h2>
-        <TicketRows
-          rows={intent.orders.map((order) => [
-            order.role === "recovery_close"
-              ? "Recovery close"
-              : `${order.role[0]?.toUpperCase() ?? ""}${order.role.slice(1)}`,
-            `${order.lastStatus ?? "not seen yet"} · filled ${order.filledSize} · ${order.exchangeOrderId ?? order.clientOrderId}`,
-          ])}
-        />
+        <OrdersPanel orders={intent.orders} />
       </Panel>
     </>
   );

@@ -1,6 +1,7 @@
 import type { Decision, PlanFields } from "@cadence/core";
 import { Cancel01Icon, MinusSignCircleIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { StatusPill, TicketRows } from "@/components/ui/Ticket";
+import { BlockedEvidence } from "./BlockedEvidence";
 import { blockedReasonCopy, resizedReasonCopy } from "@/lib/copy/reasons";
 import { outcomeLabel } from "@/lib/copy/states";
 import { formatPrice, formatUsd } from "@/lib/format";
@@ -27,6 +28,9 @@ export function DecisionPanel({ decision, plan }: { decision: Decision; plan: Pl
             </li>
           ))}
         </ul>
+      ) : null}
+      {decision.outcome === "BLOCKED" ? (
+        <BlockedEvidence decision={decision} plan={plan} />
       ) : (
         <>
           {decision.reasons.map((reason) => (

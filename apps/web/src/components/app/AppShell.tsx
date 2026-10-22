@@ -5,7 +5,7 @@ export function AppShell({ aside, children }: { aside?: ReactNode; children: Rea
   return (
     <div className="min-h-dvh bg-lavender px-[30px] pt-5 pb-20">
       <header className="mx-auto flex h-[76px] max-w-[760px] items-center justify-between rounded-card border border-ink bg-paper px-6">
-        <BrandMark href="/" />
+        <BrandMark href="/" compact={aside !== undefined && aside !== null} />
         {aside}
       </header>
       <main className="mx-auto mt-10 flex max-w-[760px] flex-col gap-6">{children}</main>
