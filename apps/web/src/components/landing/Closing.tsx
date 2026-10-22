@@ -1,7 +1,7 @@
 import strikeMark from "@/assets/brand/strike-mark.png";
 import strikeLogoWhite from "@/assets/brand/strike-logo-white.svg";
 import { Appear } from "@/components/ui/Appear";
-import { Button } from "@/components/ui/Button";
+import { RouteButton } from "@/components/ui/Button";
 import { CircleBadge } from "@/components/ui/CircleBadge";
 import { links } from "@/lib/links";
 
@@ -71,9 +71,7 @@ export function Closing() {
             </div>
             <div className="relative">
               <Appear variant="rise" delay={0.4}>
-                <Button href={links.repository} external>
-                  Read the code
-                </Button>
+                <RouteButton to="/app">Open the app</RouteButton>
               </Appear>
               <Appear
                 variant="fade"
@@ -81,7 +79,7 @@ export function Closing() {
                 className="absolute top-[-6px] left-[calc(100%+18px)] hidden w-[170px] items-start gap-1 md:flex"
               >
                 <HandArrow />
-                <span className="t-hand -rotate-10 pt-6 text-left">every check is in there</span>
+                <span className="t-hand -rotate-10 pt-6 text-left">try it in replay, no money</span>
               </Appear>
             </div>
           </div>
