@@ -37,6 +37,7 @@ describe("connecting a live Strike sub-account", () => {
     const [row] = await db.select().from(accountConnections);
     expect(JSON.stringify(row)).not.toContain(keys.seedHex);
     expect(row?.keyCiphertext).toBeTruthy();
+    expect(row?.credentialSource).toBe("api_key");
     const sealed = {
       ciphertext: row?.keyCiphertext ?? "",
       iv: row?.keyIv ?? "",

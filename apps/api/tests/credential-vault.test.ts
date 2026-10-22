@@ -3,6 +3,8 @@ import {
   CredentialVaultError,
   openCredential,
   sealCredential,
+  type AccountCredentialBinding,
+  type ChallengeCredentialBinding,
   type CredentialBinding,
   type SealedCredential,
 } from "@cadence/db";
@@ -11,7 +13,7 @@ import { describe, expect, it } from "vitest";
 const encryptionKeyHex = "0f1e2d3c4b5a69788796a5b4c3d2e1f00011223344556677889aabbccddeeff0";
 const encryptionKey = Uint8Array.from(Buffer.from(encryptionKeyHex, "hex"));
 const delegatedKey = "5eed0fc0ffee1234".repeat(8);
-const owner: CredentialBinding = {
+const owner: AccountCredentialBinding = {
   userId: "5f0c8a52-0f39-4c2e-9d67-3a1f3b2a8e11",
   strikeAccountId: "strike-account-7",
   environment: "live",
@@ -82,6 +84,26 @@ describe("credential vault", () => {
         binding: owner,
       }),
     ).toThrow(CredentialVaultError);
+  });
+
+  it("keeps a key sealed for a pending wallet connection from opening as an account's key", () => {
+    const pending: ChallengeCredentialBinding = {
+      userId: owner.userId,
+      builderChallengeId: "8d1f3c52-2a4b-4c6d-9e8f-0a1b2c3d4e5f",
+      environment: "live",
+    };
+    const sealed = sealCredential({
+      plaintext: delegatedKey,
+      key: encryptionKey,
+      keyVersion: 1,
+      binding: pending,
+    });
+    expect(openCredential(sealed, encryptionKey, pending)).toBe(delegatedKey);
+    const asAccount = { ...owner, strikeAccountId: pending.builderChallengeId };
+    expect(openError(sealed, asAccount)).toBeInstanceOf(CredentialVaultError);
+    expect(
+      openError(seal(), { ...pending, builderChallengeId: owner.strikeAccountId }),
+    ).toBeInstanceOf(CredentialVaultError);
   });
 
   it("never echoes the key in the sealed record or in an error", () => {

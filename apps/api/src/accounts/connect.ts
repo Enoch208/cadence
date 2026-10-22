@@ -101,6 +101,7 @@ export async function connectLiveAccount(
     keyIv: sealed.iv,
     keyTag: sealed.tag,
     keyVersion: sealed.keyVersion,
+    credentialSource: "api_key" as const,
   };
   const [row] = await deps.db
     .insert(accountConnections)
@@ -132,6 +133,7 @@ export async function connectReplayAccount(
     keyIv: null,
     keyTag: null,
     keyVersion: null,
+    credentialSource: null,
     replayScenario: scenario,
     status: "active",
     createdAt: deps.now(),

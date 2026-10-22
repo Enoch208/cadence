@@ -1,5 +1,11 @@
 import { eq } from "drizzle-orm";
-import { accountConnections, executionIntents, fills, outbox } from "@cadence/db";
+import {
+  accountConnections,
+  builderChallenges,
+  executionIntents,
+  fills,
+  outbox,
+} from "@cadence/db";
 import { describe, expect, it } from "vitest";
 import { db, resetDatabaseBetweenTests } from "./support/database";
 import { correctedPlan, longPlan, testNow } from "./support/fixtures";
@@ -138,5 +144,75 @@ describe("database invariants", () => {
       violation("23514", "account_connections_credentials_match_environment"),
     );
     await expect(db.insert(accountConnections).values(replay).returning()).resolves.toHaveLength(1);
+  });
+
+  it("records how every live key was made, and never a source for a replay account", async () => {
+    const user = await insertUser(3004);
+    const sealedKey = {
+      publicKey: "b".repeat(64),
+      keyCiphertext: "c2VhbGVk",
+      keyIv: "AAAAAAAAAAAAAAAA",
+      keyTag: "AAAAAAAAAAAAAAAAAAAAAA==",
+      keyVersion: 1,
+    };
+    const live = {
+      userId: user.id,
+      environment: "live" as const,
+      strikeAccountId: "strike-main-9",
+      createdAt: testNow,
+      ...sealedKey,
+    };
+    await expect(db.insert(accountConnections).values(live)).rejects.toMatchObject(
+      violation("23514", "account_connections_credentials_match_environment"),
+    );
+    await expect(
+      db.insert(accountConnections).values({
+        userId: user.id,
+        environment: "replay",
+        strikeAccountId: "replay-2",
+        replayScenario: "happy_path",
+        credentialSource: "api_key",
+        createdAt: testNow,
+      }),
+    ).rejects.toMatchObject(
+      violation("23514", "account_connections_credentials_match_environment"),
+    );
+    await expect(
+      db
+        .insert(accountConnections)
+        .values({ ...live, credentialSource: "builder" })
+        .returning(),
+    ).resolves.toMatchObject([{ credentialSource: "builder" }]);
+  });
+
+  it("keeps a pending wallet connection to one lowercase key and one Strike nonce", async () => {
+    const user = await insertUser(3005);
+    const challenge = {
+      userId: user.id,
+      walletChain: "solana" as const,
+      walletAddress: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+      publicKey: "c".repeat(64),
+      keyCiphertext: "c2VhbGVk",
+      keyIv: "AAAAAAAAAAAAAAAA",
+      keyTag: "AAAAAAAAAAAAAAAAAAAAAA==",
+      keyVersion: 1,
+      strikeNonce: "0192f0c1-7b8e-7c3a-9d61-2f1e4b5a6c7d",
+      consentMessage: "Connect to Strike via builder",
+      expiresAt: testNow + 270_000,
+      createdAt: testNow,
+    };
+    await expect(
+      db.insert(builderChallenges).values({ ...challenge, publicKey: "C".repeat(64) }),
+    ).rejects.toMatchObject(violation("23514", "builder_challenges_public_key_hex"));
+    await expect(
+      db.insert(builderChallenges).values({ ...challenge, expiresAt: testNow }),
+    ).rejects.toMatchObject(violation("23514", "builder_challenges_expires_after_creation"));
+    await db.insert(builderChallenges).values(challenge);
+    await expect(
+      db.insert(builderChallenges).values({ ...challenge, publicKey: "d".repeat(64) }),
+    ).rejects.toMatchObject(violation("23505", "builder_challenges_strike_nonce_unique"));
+    await expect(
+      db.insert(builderChallenges).values({ ...challenge, strikeNonce: "another-nonce" }),
+    ).rejects.toMatchObject(violation("23505", "builder_challenges_public_key_unique"));
   });
 });

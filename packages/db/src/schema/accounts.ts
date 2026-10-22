@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, integer, jsonb, pgTable, text, unique, uuid } from "drizzle-orm/pg-core";
 import type { RiskPolicy } from "@cadence/core";
 import { id, instant } from "./columns";
-import { connectionStatusEnum, environmentEnum } from "./enums";
+import { connectionStatusEnum, credentialSourceEnum, environmentEnum } from "./enums";
 import { users } from "./people";
 
 export const accountConnections = pgTable(
@@ -19,6 +19,7 @@ export const accountConnections = pgTable(
     keyIv: text("key_iv"),
     keyTag: text("key_tag"),
     keyVersion: integer("key_version"),
+    credentialSource: credentialSourceEnum("credential_source"),
     replayScenario: text("replay_scenario"),
     status: connectionStatusEnum("status").notNull().default("active"),
     createdAt: instant("created_at").notNull(),
@@ -34,11 +35,13 @@ export const accountConnections = pgTable(
       sql`(${table.environment} = 'live'
         and ${table.publicKey} is not null and ${table.keyCiphertext} is not null
         and ${table.keyIv} is not null and ${table.keyTag} is not null
-        and ${table.keyVersion} is not null and ${table.replayScenario} is null)
+        and ${table.keyVersion} is not null and ${table.credentialSource} is not null
+        and ${table.replayScenario} is null)
       or (${table.environment} = 'replay'
         and ${table.publicKey} is null and ${table.keyCiphertext} is null
         and ${table.keyIv} is null and ${table.keyTag} is null
-        and ${table.keyVersion} is null and ${table.replayScenario} is not null)`,
+        and ${table.keyVersion} is null and ${table.credentialSource} is null
+        and ${table.replayScenario} is not null)`,
     ),
   ],
 );

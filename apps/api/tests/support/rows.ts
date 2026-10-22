@@ -102,6 +102,7 @@ export async function insertLiveConnection(userId: string, strikeAccountId: stri
       keyIv: "AAAAAAAAAAAAAAAA",
       keyTag: "AAAAAAAAAAAAAAAAAAAAAA==",
       keyVersion: 1,
+      credentialSource: "api_key",
       createdAt: testNow,
     })
     .returning();

@@ -107,6 +107,7 @@ const connectionColumns = (spec: ConnectionSpec) =>
         keyIv: "AAAAAAAAAAAAAAAA",
         keyTag: "AAAAAAAAAAAAAAAAAAAAAA==",
         keyVersion: 1,
+        credentialSource: "api_key" as const,
       };
 
 export type Member = Awaited<ReturnType<typeof insertMember>>;

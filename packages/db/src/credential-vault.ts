@@ -7,11 +7,19 @@ const keyBytes = 32;
 const ivBytes = 12;
 const tagBytes = 16;
 
-export type CredentialBinding = {
+export type AccountCredentialBinding = {
   userId: string;
   strikeAccountId: string;
   environment: Environment;
 };
+
+export type ChallengeCredentialBinding = {
+  userId: string;
+  builderChallengeId: string;
+  environment: "live";
+};
+
+export type CredentialBinding = AccountCredentialBinding | ChallengeCredentialBinding;
 
 export type SealedCredential = {
   ciphertext: string;
