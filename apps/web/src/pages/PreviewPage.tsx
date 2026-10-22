@@ -17,16 +17,19 @@ import {
   type PreviewResult,
   type PublicPlan,
 } from "@/lib/api/schemas";
+import { venueName } from "@/lib/copy/states";
 import { formatPrice } from "@/lib/format";
 import { useNow } from "@/lib/use-now";
 import { useResource } from "@/lib/use-resource";
 
 function Consent({
   preview,
+  venue,
   onApprove,
   busy,
 }: {
   preview: PreviewResult;
+  venue: string;
   onApprove: () => void;
   busy: boolean;
 }) {
@@ -41,7 +44,7 @@ function Consent({
       <p className="t-body">
         Approving sends <strong>one order for this plan version</strong>: at most {quantity} at a
         limit of {formatPrice(limitPrice)}, filled in full or not at all, with the stop and target
-        attached on Strike. Cadence checks again just before sending. If anything changed, nothing
+        attached on {venue}. Cadence checks again just before sending. If anything changed, nothing
         is sent. This is not permission for future plans.
       </p>
       <ActionButton onClick={onApprove} disabled={expired || busy}>
@@ -127,6 +130,7 @@ function PreviewFlow({ plan }: { plan: PublicPlan }) {
           <DecisionPanel decision={preview.decision} plan={plan.current.plan} />
           <Consent
             preview={preview}
+            venue={venueName[plan.current.plan.environment]}
             busy={busy}
             onApprove={() => void approve(preview.previewId)}
           />

@@ -10,6 +10,7 @@ import { OrdersPanel } from "@/components/app/OrdersPanel";
 import { TicketRows } from "@/components/ui/Ticket";
 import { apiRequest } from "@/lib/api/client";
 import { intentSchema, type IntentView } from "@/lib/api/schemas";
+import { venueName } from "@/lib/copy/states";
 import { formatPrice, formatUsd } from "@/lib/format";
 
 const settled: ReadonlySet<IntentState> = new Set(terminalIntentStates);
@@ -66,7 +67,7 @@ function IntentDetail({ intentId }: { intentId: string }) {
           <h1 className="t-title">{intent.market}</h1>
           <EnvironmentBadge environment={intent.environment} />
         </div>
-        <IntentTimeline state={intent.state} />
+        <IntentTimeline state={intent.state} environment={intent.environment} />
         {problem !== null ? <Problem title="Status is not refreshing">{problem}</Problem> : null}
       </Panel>
       <Panel>
@@ -81,8 +82,8 @@ function IntentDetail({ intentId }: { intentId: string }) {
         />
       </Panel>
       <Panel>
-        <h2 className="t-card">On Strike</h2>
-        <OrdersPanel orders={intent.orders} />
+        <h2 className="t-card">On {venueName[intent.environment]}</h2>
+        <OrdersPanel orders={intent.orders} environment={intent.environment} />
         {settled.has(intent.state) ? (
           <Link to={`/receipts/${intent.id}`} className="t-body underline underline-offset-4">
             View the receipt

@@ -1,5 +1,7 @@
+import type { Environment } from "@cadence/core";
 import { TicketRows } from "@/components/ui/Ticket";
 import type { IntentView } from "@/lib/api/schemas";
+import { venueName } from "@/lib/copy/states";
 
 const roleLabel = {
   entry: "Entry",
@@ -18,9 +20,15 @@ function describe(order: IntentView["orders"][number]): string {
   return `${status}${filled}${reference}`;
 }
 
-export function OrdersPanel({ orders }: { orders: IntentView["orders"] }) {
+export function OrdersPanel({
+  orders,
+  environment,
+}: {
+  orders: IntentView["orders"];
+  environment: Environment;
+}) {
   if (orders.length === 0) {
-    return <p className="t-body">Nothing has been sent to Strike yet.</p>;
+    return <p className="t-body">Nothing has been sent to {venueName[environment]} yet.</p>;
   }
   return <TicketRows rows={orders.map((order) => [roleLabel[order.role], describe(order)])} />;
 }

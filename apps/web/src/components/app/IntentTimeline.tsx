@@ -1,4 +1,4 @@
-import type { IntentState } from "@cadence/core";
+import type { Environment, IntentState } from "@cadence/core";
 import { Alert02Icon, Clock01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { intentStateDetail, intentStateLabel } from "@/lib/copy/states";
@@ -19,7 +19,13 @@ const stopped: ReadonlySet<IntentState> = new Set([
   "expired",
 ]);
 
-export function IntentTimeline({ state }: { state: IntentState }) {
+export function IntentTimeline({
+  state,
+  environment,
+}: {
+  state: IntentState;
+  environment: Environment;
+}) {
   const reached = happyPath.indexOf(state);
   return (
     <div className="flex flex-col gap-5">
@@ -33,7 +39,7 @@ export function IntentTimeline({ state }: { state: IntentState }) {
               >
                 <HugeiconsIcon icon={done ? Tick02Icon : Clock01Icon} size={14} strokeWidth={2} />
               </span>
-              {intentStateLabel[step]}
+              {intentStateLabel(step, environment)}
             </li>
           );
         })}
@@ -45,11 +51,12 @@ export function IntentTimeline({ state }: { state: IntentState }) {
         >
           <HugeiconsIcon icon={Alert02Icon} size={20} strokeWidth={1.6} className="mt-1 shrink-0" />
           <span>
-            <strong>{intentStateLabel[state]}.</strong> {intentStateDetail[state]}
+            <strong>{intentStateLabel(state, environment)}.</strong>{" "}
+            {intentStateDetail(state, environment)}
           </span>
         </p>
       ) : (
-        <p className="t-body">{intentStateDetail[state]}</p>
+        <p className="t-body">{intentStateDetail(state, environment)}</p>
       )}
     </div>
   );

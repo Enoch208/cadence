@@ -16,7 +16,7 @@ function OrderRow({ order, history }: { order: IntentSummary; history: boolean }
         <span className="flex flex-col gap-1">
           <span className="t-body font-medium">
             {order.market} {order.direction === "long" ? "long" : "short"} ·{" "}
-            {intentStateLabel[order.state]}
+            {intentStateLabel(order.state, order.environment)}
           </span>
           <span className="t-body tabular-nums">
             {order.quantity} at {formatPrice(order.limitPrice)} · planned risk{" "}

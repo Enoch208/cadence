@@ -13,7 +13,7 @@ export function AccountPicker({ accounts, selected, onSelect }: AccountPickerPro
   if (usable.length === 0) {
     return (
       <p className="t-body">
-        You have no active Strike account connected.{" "}
+        You have no active account for this plan yet.{" "}
         <Link to="/account" className="underline underline-offset-4">
           Connect one first
         </Link>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   decisionOutcomes,
+  environments,
   intentStates,
   publishedPlanSchema,
   reasonCodes,
@@ -62,13 +63,27 @@ describe("plain-language copy", () => {
       expect(outcomeLabel[outcome].length).toBeGreaterThan(0);
     }
     for (const state of intentStates) {
-      expect(intentStateLabel[state].length).toBeGreaterThan(0);
-      expect(intentStateDetail[state]).not.toMatch(banned);
+      for (const environment of environments) {
+        expect(intentStateLabel(state, environment).length).toBeGreaterThan(0);
+        expect(intentStateDetail(state, environment)).not.toMatch(banned);
+      }
     }
   });
 
   it("never calls a position protected or filled before Strike confirms it", () => {
-    expect(intentStateLabel.submitted).not.toMatch(/filled/i);
-    expect(intentStateLabel.open_verified).toBe("Exits verified");
+    expect(intentStateLabel("submitted", "live")).toBe("Sent to Strike");
+    expect(intentStateLabel("submitted", "live")).not.toMatch(/filled/i);
+    expect(intentStateLabel("open_verified", "live")).toBe("Exits verified");
+  });
+
+  it("never credits Strike with what the replay exchange did", () => {
+    for (const state of intentStates) {
+      expect(intentStateLabel(state, "replay")).not.toMatch(/strike/i);
+      expect(intentStateDetail(state, "replay")).not.toMatch(/strike/i);
+    }
+    expect(intentStateLabel("rejected", "replay")).toBe("Rejected by the replay exchange");
+    expect(intentStateDetail("submitted", "replay")).toBe(
+      "The replay exchange acknowledged the order. Waiting for the fill.",
+    );
   });
 });

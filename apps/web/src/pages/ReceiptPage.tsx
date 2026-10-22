@@ -12,7 +12,7 @@ import {
   type IntentView,
   type ReceiptResponse,
 } from "@/lib/api/schemas";
-import { intentStateLabel } from "@/lib/copy/states";
+import { intentStateLabel, venueName } from "@/lib/copy/states";
 import { formatInstant, formatPrice, formatUsd, shortDigest } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 
@@ -40,6 +40,7 @@ function profitLine(realizedPnl: string | null): string {
 
 function ReceiptView({ data, intent }: { data: ReceiptResponse; intent: IntentView }) {
   const { receipt } = data;
+  const venue = venueName[intent.environment];
   return (
     <>
       <Panel>
@@ -48,8 +49,8 @@ function ReceiptView({ data, intent }: { data: ReceiptResponse; intent: IntentVi
           <EnvironmentBadge environment={intent.environment} />
         </div>
         <p className="t-body">
-          {intent.market} · {intentStateLabel[receipt.state]} · reconciled with Strike{" "}
-          {formatInstant(receipt.reconciledAt)}
+          {intent.market} · {intentStateLabel(receipt.state, intent.environment)} · reconciled with{" "}
+          {venue} {formatInstant(receipt.reconciledAt)}
         </p>
         <TicketRows
           rows={[
@@ -75,14 +76,16 @@ function ReceiptView({ data, intent }: { data: ReceiptResponse; intent: IntentVi
         {receipt.incomplete.length > 0 ? (
           <p className="t-body rounded-card border border-ink bg-butter p-4">
             <strong>Not final.</strong> Still waiting on: {receipt.incomplete.join(", ")}. Nothing
-            here is estimated; missing values stay missing until Strike reports them.
+            here is estimated; missing values stay missing until {venue} reports them.
           </p>
         ) : null}
       </Panel>
       <Panel>
-        <h2 className="t-card">Strike order IDs</h2>
+        <h2 className="t-card">
+          {intent.environment === "live" ? "Strike order IDs" : "Replay exchange order IDs"}
+        </h2>
         {receipt.exchangeOrderIds.length === 0 ? (
-          <p className="t-body">No order reached Strike.</p>
+          <p className="t-body">No order reached {venue}.</p>
         ) : (
           <ul className="flex flex-col gap-1">
             {receipt.exchangeOrderIds.map((orderId) => (
