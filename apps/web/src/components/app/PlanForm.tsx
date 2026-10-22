@@ -2,14 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ActionButton } from "@/components/ui/Button";
 import { apiRequest } from "@/lib/api/client";
-import {
-  draftedKeys,
-  draftingStatusSchema,
-  modelName,
-  type PlanDraftReply,
-} from "@/lib/api/drafting";
+import { draftedKeys, draftingStatusSchema, type PlanDraftReply } from "@/lib/api/drafting";
 import { createdPlanSchema, publishedPlanVersionSchema } from "@/lib/api/schemas";
-import { fillFromDraft, type FormKey, type Sources } from "@/lib/draft-fill";
+import { draftSummary, fillFromDraft, type FormKey, type Sources } from "@/lib/draft-fill";
 import { shortDigest } from "@/lib/format";
 import { checkDraft, type PlanDraft } from "@/lib/plan-form";
 import { useNow } from "@/lib/use-now";
@@ -66,7 +61,7 @@ const fromMessage = (quote: string | undefined) =>
 const without = (sources: Sources, key: FormKey): Sources =>
   Object.fromEntries(Object.entries(sources).filter(([name]) => name !== key));
 
-type Drafted = { missing: FormKey[]; model: string };
+type Drafted = { missing: FormKey[] };
 
 function DraftSummary({ drafted }: { drafted: Drafted }) {
   const summary = useRef<HTMLParagraphElement>(null);
@@ -76,7 +71,6 @@ function DraftSummary({ drafted }: { drafted: Drafted }) {
     summary.current?.focus({ preventScroll: true });
   }, [drafted]);
   const complete = drafted.missing.length === 0;
-  const leftOver = drafted.missing.map((key) => fieldNames[key]).join(", ");
   return (
     <p
       ref={summary}
@@ -84,9 +78,10 @@ function DraftSummary({ drafted }: { drafted: Drafted }) {
       role="status"
       className={`t-body rounded-card border border-ink p-4 outline-none ${complete ? "bg-mint" : "bg-butter"}`}
     >
-      {modelName(drafted.model)} filled {draftedKeys.length - drafted.missing.length} of{" "}
-      {draftedKeys.length} fields from your message. {complete ? "" : `Left for you: ${leftOver}. `}
-      Check every value before you publish.
+      {draftSummary(
+        draftedKeys.length,
+        drafted.missing.map((key) => fieldNames[key]),
+      )}
     </p>
   );
 }
@@ -115,7 +110,7 @@ export function PlanForm({ communityId }: { communityId: string }) {
     const filled = fillFromDraft(draft, reply.draft);
     setDraft(filled.draft);
     setSources(filled.sources);
-    setDrafted({ missing: filled.missing, model: reply.model });
+    setDrafted({ missing: filled.missing });
     setTouched(true);
   };
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { modelName, planDraftSchema } from "../src/lib/api/drafting";
-import { fillFromDraft } from "../src/lib/draft-fill";
+import { planDraftSchema } from "../src/lib/api/drafting";
+import { draftSummary, fillFromDraft } from "../src/lib/draft-fill";
 import { checkDraft, type PlanDraft } from "../src/lib/plan-form";
 
 const now = Date.parse("2026-10-22T12:00:00Z");
@@ -90,14 +90,15 @@ describe("filling the plan form from a drafted message", () => {
   });
 });
 
-describe("naming the model that read the message", () => {
-  it.each([
-    ["gpt-6.1-sol", "GPT-6.1 Sol"],
-    ["gpt-6.1-sol-2026-10-01", "GPT-6.1 Sol"],
-    ["gpt-6-luna", "GPT-6 Luna"],
-    ["gpt-5.5", "GPT-5.5"],
-    ["some-other-model", "some-other-model"],
-  ])("names %s as %s", (model, name) => {
-    expect(modelName(model)).toBe(name);
+describe("the summary after filling a plan", () => {
+  it("speaks as Cadence and never names the model", () => {
+    expect(draftSummary(8, [])).toBe(
+      "Cadence filled all 8 fields from your message. Check each value before you publish.",
+    );
+    expect(draftSummary(8, ["why this setup"])).toBe(
+      "Cadence filled 7 of 8 fields from your message. Add the rest: why this setup. Check each value before you publish.",
+    );
+    expect(draftSummary(8, ["stop", "target"])).toContain("6 of 8");
+    expect(draftSummary(8, ["stop"])).not.toMatch(/gpt|claude|openai/i);
   });
 });

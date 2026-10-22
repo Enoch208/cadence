@@ -45,3 +45,10 @@ export function fillFromDraft(current: PlanDraft, reply: PlanDraftReply["draft"]
   }
   return { draft, sources, missing };
 }
+
+export function draftSummary(total: number, leftOver: readonly string[]): string {
+  const check = "Check each value before you publish.";
+  return leftOver.length === 0
+    ? `Cadence filled all ${String(total)} fields from your message. ${check}`
+    : `Cadence filled ${String(total - leftOver.length)} of ${String(total)} fields from your message. Add the rest: ${leftOver.join(", ")}. ${check}`;
+}

@@ -24,14 +24,3 @@ export const planDraftSchema = z.object({
   }),
 });
 export type PlanDraftReply = z.infer<typeof planDraftSchema>;
-
-export function modelName(model: string): string {
-  const match = /^gpt-(\d+(?:\.\d+)?)(?:-([a-z]+))?(?:-\d{4}-\d{2}-\d{2})?$/.exec(model);
-  if (match === null) {
-    return model;
-  }
-  const [, version = "", tier] = match;
-  return tier === undefined
-    ? `GPT-${version}`
-    : `GPT-${version} ${tier.charAt(0).toUpperCase()}${tier.slice(1)}`;
-}
