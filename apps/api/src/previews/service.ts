@@ -2,6 +2,7 @@ import { canonicalJson, decide, freshness, sha256Hex, type DecimalString } from 
 import { previews } from "@cadence/db";
 import { ownedAccount } from "../accounts/service";
 import type { AppDeps } from "../deps";
+import { recordEvent, userActor } from "../events";
 import { conflict } from "../http/errors";
 import { currentPlanVersion } from "../plan/public";
 import { ensurePolicy } from "../policies/service";
@@ -49,5 +50,17 @@ export async function createPreview(
   if (stored === undefined) {
     throw new Error("Inserting a preview returned no row");
   }
+  await recordEvent(deps.db, {
+    at: input.now,
+    actor: userActor(userId),
+    correlationId: stored.id,
+    environment: account.environment,
+    type: "preview_decided",
+    data: {
+      outcome: decision.outcome,
+      reasons: decision.reasons.join(","),
+      planVersionId: version.id,
+    },
+  });
   return { previewId: stored.id, expiresAt, decision };
 }
