@@ -1,6 +1,6 @@
 import { inspect } from "node:util";
 import { describe, expect, it } from "vitest";
-import { createSigner } from "../src/signer";
+import { createSigner, generateSignerKeys } from "../src/signer";
 import { keyRenderings, rfc8032Vector1, throwawayKeys, verifies } from "./support/keys";
 
 const thrownMessage = (action: () => unknown): string => {
@@ -68,6 +68,24 @@ describe("createSigner", () => {
     expect(() =>
       createSigner({ publicKeyHex: "ab".repeat(31), privateKeyHex: rfc8032Vector1.privateKeyHex }),
     ).toThrow("The public key must be 64 hex characters");
+  });
+});
+
+describe("generateSignerKeys", () => {
+  it("makes a fresh raw Ed25519 pair the signer accepts and Strike can register", () => {
+    const keys = generateSignerKeys();
+    expect(keys.publicKeyHex).toMatch(/^[0-9a-f]{64}$/);
+    expect(keys.privateKeyHex).toMatch(/^[0-9a-f]{64}$/);
+    const signer = createSigner(keys);
+    expect(signer.publicKeyHex).toBe(keys.publicKeyHex);
+    expect(verifies(keys.publicKeyHex, "builder", signer.sign("builder"))).toBe(true);
+  });
+
+  it("never hands out the same pair twice", () => {
+    const first = generateSignerKeys();
+    const second = generateSignerKeys();
+    expect(second.publicKeyHex).not.toBe(first.publicKeyHex);
+    expect(second.privateKeyHex).not.toBe(first.privateKeyHex);
   });
 });
 

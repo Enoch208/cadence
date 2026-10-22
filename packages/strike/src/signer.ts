@@ -1,4 +1,10 @@
-import { createPrivateKey, createPublicKey, sign, type KeyObject } from "node:crypto";
+import {
+  createPrivateKey,
+  createPublicKey,
+  generateKeyPairSync,
+  sign,
+  type KeyObject,
+} from "node:crypto";
 
 export type Signer = {
   readonly publicKeyHex: string;
@@ -36,6 +42,16 @@ function importSeed(seed: Buffer): KeyObject {
 
 const rawPublicKeyHex = (privateKey: KeyObject) =>
   createPublicKey(privateKey).export({ format: "der", type: "spki" }).subarray(-32).toString("hex");
+
+export function generateSignerKeys(): SignerKeys {
+  const { privateKey } = generateKeyPairSync("ed25519");
+  const seed = privateKey.export({ format: "der", type: "pkcs8" }).subarray(-32);
+  try {
+    return { publicKeyHex: rawPublicKeyHex(privateKey), privateKeyHex: seed.toString("hex") };
+  } finally {
+    seed.fill(0);
+  }
+}
 
 export function createSigner(keys: SignerKeys): Signer {
   if (!seedHex.test(keys.publicKeyHex)) {

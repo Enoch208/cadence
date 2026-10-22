@@ -10,3 +10,4 @@ export * from "./replay-scenarios";
 export * from "./replay-client";
 export * from "./credentials";
 export * from "./snapshot";
+export * from "./builder-connect";
