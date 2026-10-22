@@ -10,6 +10,7 @@ import { authRoutes } from "./routes/auth";
 import { communityRoutes } from "./routes/communities";
 import { planRoutes } from "./routes/plans";
 import { policyRoutes } from "./routes/policies";
+import { previewRoutes } from "./routes/previews";
 
 export function createApp(deps: AppDeps) {
   return new Hono<AppEnv>()
@@ -24,6 +25,7 @@ export function createApp(deps: AppDeps) {
     .route("/api", planRoutes(deps))
     .route("/api", accountRoutes(deps))
     .route("/api", policyRoutes(deps))
+    .route("/api", previewRoutes(deps))
     .notFound((c) =>
       c.json({ code: "NOT_FOUND", message: "There is nothing at this address." }, 404),
     )

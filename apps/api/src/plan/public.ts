@@ -61,3 +61,18 @@ export async function readPublicPlanVersion(db: Executor, publicId: string, vers
   }
   return versionView(row);
 }
+
+export async function currentPlanVersion(db: Executor, publicId: string) {
+  const [row] = await db
+    .select({ plan: plans, version: planVersions })
+    .from(plans)
+    .innerJoin(
+      planVersions,
+      and(eq(planVersions.planId, plans.id), eq(planVersions.version, plans.currentVersion)),
+    )
+    .where(eq(plans.publicId, publicId));
+  if (row === undefined) {
+    throw unpublished();
+  }
+  return row;
+}
