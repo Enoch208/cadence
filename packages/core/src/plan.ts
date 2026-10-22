@@ -47,9 +47,12 @@ export function planGeometryIssues(plan: PlanFields): PlanGeometryIssue[] {
   return issues;
 }
 
-export const publishedPlanSchema = planFieldsSchema.superRefine((plan, ctx) => {
-  for (const issue of planGeometryIssues(plan)) {
-    ctx.addIssue({ code: "custom", path: [issue.path], message: issue.message });
-  }
-});
+export const publishedPlanSchema = planFieldsSchema.superRefine(
+  (plan, ctx) => {
+    for (const issue of planGeometryIssues(plan)) {
+      ctx.addIssue({ code: "custom", path: [issue.path], message: issue.message });
+    }
+  },
+  { when: (payload) => payload.issues.length === 0 },
+);
 export type PublishedPlan = z.infer<typeof publishedPlanSchema>;

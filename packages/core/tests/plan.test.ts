@@ -107,6 +107,14 @@ describe("publishedPlanSchema geometry", () => {
     expect(failedPaths({ ...longPlan, stopPrice: "9", targetPrice: "1000" })).toEqual([]);
   });
 
+  it("reports a malformed price as a field error instead of throwing", () => {
+    expect(() => publishedPlanSchema.safeParse({ ...longPlan, entryMin: "84,000" })).not.toThrow();
+    expect(failedPaths({ ...longPlan, entryMin: "84,000", stopPrice: "abc" })).toEqual([
+      "entryMin",
+      "stopPrice",
+    ]);
+  });
+
   it("keeps a difference that binary floating point would erase", () => {
     const plan = planFieldsSchema.parse({
       ...longPlan,
