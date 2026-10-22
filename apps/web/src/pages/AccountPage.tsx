@@ -8,6 +8,7 @@ import { ActionButton } from "@/components/ui/Button";
 import { apiRequest } from "@/lib/api/client";
 import { accountSchema, accountsSchema, type ConnectedAccount } from "@/lib/api/schemas";
 import { useResource } from "@/lib/use-resource";
+import { ReplayAccounts } from "./ReplayAccounts";
 import { RiskRules } from "./RiskRules";
 
 function AccountRow({ account, onChanged }: { account: ConnectedAccount; onChanged: () => void }) {
@@ -27,7 +28,11 @@ function AccountRow({ account, onChanged }: { account: ConnectedAccount; onChang
   return (
     <li className="flex flex-col gap-3 border-t border-ink py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="t-body font-medium">Strike account {account.strikeAccountId}</span>
+        <span className="t-body font-medium">
+          {account.environment === "replay"
+            ? `Replay account …${account.strikeAccountId.slice(-6)}`
+            : `Strike account ${account.strikeAccountId}`}
+        </span>
         <EnvironmentBadge environment={account.environment} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -127,6 +132,7 @@ function Accounts() {
         )}
       </Panel>
       <ConnectLive onConnected={accounts.reload} />
+      <ReplayAccounts onAdded={accounts.reload} />
       <RiskRules />
     </>
   );

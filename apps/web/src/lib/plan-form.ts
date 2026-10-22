@@ -2,10 +2,12 @@ import {
   planGeometryIssues,
   publishedPlanSchema,
   type Direction,
+  type Environment,
   type PublishedPlan,
 } from "@cadence/core";
 
 export type PlanDraft = {
+  environment: Environment;
   market: string;
   direction: Direction;
   entryMin: string;
@@ -47,7 +49,7 @@ export function checkDraft(draft: PlanDraft, now: number): DraftCheck {
     triggerSource: "mark_price",
     entryExpiresAt: utcInstant(draft.closesAtLocal),
     rationale: draft.rationale.trim(),
-    environment: "live",
+    environment: draft.environment,
   };
   const parsed = publishedPlanSchema.safeParse(candidate);
   const errors: Partial<Record<keyof PlanDraft, string>> = {};

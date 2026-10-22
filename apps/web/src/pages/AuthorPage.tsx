@@ -18,6 +18,7 @@ import { useNow } from "@/lib/use-now";
 import { useResource } from "@/lib/use-resource";
 
 const emptyDraft: PlanDraft = {
+  environment: "live",
   market: "BTC-USD",
   direction: "long",
   entryMin: "",
@@ -126,6 +127,22 @@ function PlanForm({ communityId }: { communityId: string }) {
     <Panel>
       <h2 className="t-card">New plan</h2>
       <div className="grid gap-5 md:grid-cols-2">
+        <label className="flex flex-col gap-2 md:col-span-2">
+          <span className="t-body font-medium">Runs on</span>
+          <select
+            value={draft.environment}
+            onChange={(event) => {
+              setDraft((current) => ({
+                ...current,
+                environment: event.target.value === "replay" ? "replay" : "live",
+              }));
+            }}
+            className="h-[54px] rounded-btn border border-ink bg-paper px-4 t-body"
+          >
+            <option value="live">Live: real orders on Strike mainnet</option>
+            <option value="replay">Replay: a simulated exchange, no money</option>
+          </select>
+        </label>
         <label className="flex flex-col gap-2">
           <span className="t-body font-medium">Market</span>
           <select

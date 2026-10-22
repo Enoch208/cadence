@@ -4,6 +4,7 @@ import { checkDraft, type PlanDraft } from "../src/lib/plan-form";
 const now = Date.parse("2026-10-22T12:00:00Z");
 
 const draft: PlanDraft = {
+  environment: "live",
   market: "BTC-USD",
   direction: "long",
   entryMin: "84000",
@@ -23,6 +24,11 @@ describe("the curator's plan form", () => {
       expect(result.plan.entryExpiresAt).toBe("2026-10-23T18:00:00Z");
       expect(result.plan.environment).toBe("live");
     }
+  });
+
+  it("keeps the environment the curator chose", () => {
+    const result = checkDraft({ ...draft, environment: "replay" }, now);
+    expect(result.ok && result.plan.environment).toBe("replay");
   });
 
   it("points at the stop when it sits inside the entry range", () => {
