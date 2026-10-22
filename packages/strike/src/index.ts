@@ -5,3 +5,5 @@ export * from "./clock";
 export * from "./errors";
 export * from "./orders";
 export * from "./live-client";
+export * from "./replay-scenarios";
+export * from "./replay-client";
