@@ -7,6 +7,7 @@ import { PlanForm } from "@/components/app/PlanForm";
 import { ActionButton } from "@/components/ui/Button";
 import { apiRequest } from "@/lib/api/client";
 import { communitiesSchema, createdCommunitySchema } from "@/lib/api/schemas";
+import { telegramBotUsername } from "@/lib/env";
 import { useResource } from "@/lib/use-resource";
 
 function CommunitySetup({ onCreated }: { onCreated: () => void }) {
@@ -28,15 +29,16 @@ function CommunitySetup({ onCreated }: { onCreated: () => void }) {
     <Panel>
       <h2 className="t-card">Your Telegram group</h2>
       <p className="t-body">
-        Add the Cadence bot to your group as an admin, then enter the group’s chat ID.
+        Add {telegramBotUsername === null ? "the Cadence bot" : `@${telegramBotUsername}`} to your
+        group as an admin. It posts the group’s ID in the group; enter it here.
       </p>
       <Field label="Community name" value={name} onChange={setName} />
       <Field
         label="Telegram chat ID"
         value={chatId}
         onChange={setChatId}
-        inputMode="numeric"
-        hint="Group IDs start with -100."
+        inputMode="text"
+        hint="The bot posts it when you add it. Group IDs start with -100."
       />
       <div>
         <ActionButton
