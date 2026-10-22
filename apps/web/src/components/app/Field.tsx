@@ -6,7 +6,7 @@ type FieldProps = {
   onChange: (value: string) => void;
   type?: "text" | "password" | "datetime-local";
   inputMode?: "decimal" | "numeric" | "text";
-  hint?: string;
+  hint?: string | undefined;
   error?: string | undefined;
   autoComplete?: string;
 };
@@ -23,7 +23,7 @@ export function Field({
 }: FieldProps) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       <label htmlFor={id} className="t-body font-medium">
         {label}
       </label>

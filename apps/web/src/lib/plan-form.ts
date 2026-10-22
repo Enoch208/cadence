@@ -37,6 +37,17 @@ const utcInstant = (local: string) => {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().replace(/\.\d{3}Z$/, "Z");
 };
 
+const pad = (value: number) => String(value).padStart(2, "0");
+
+export function localInputValue(instant: string): string {
+  const at = new Date(instant);
+  if (Number.isNaN(at.getTime())) {
+    return "";
+  }
+  const day = `${String(at.getFullYear())}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+  return `${day}T${pad(at.getHours())}:${pad(at.getMinutes())}`;
+}
+
 export function checkDraft(draft: PlanDraft, now: number): DraftCheck {
   const candidate = {
     schemaVersion: 1,
