@@ -38,7 +38,7 @@ function CommunitySetup({ onCreated }: { onCreated: () => void }) {
         value={chatId}
         onChange={setChatId}
         inputMode="text"
-        hint="The bot posts it when you add it. Group IDs start with -100."
+        hint="The bot posts it in the group when you add it."
       />
       <div>
         <ActionButton
