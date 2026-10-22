@@ -1,10 +1,10 @@
 import { Hono, type Context } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import { z } from "zod";
-import { requireUser, sessionCookieOptions } from "../auth/middleware";
+import { requireUser, sessionCookieOptions, sessionFromCookie } from "../auth/middleware";
 import { issueSession, sessionCookieName, sessionLifetimeMs } from "../auth/session";
 import { verifyLoginWidget, verifyWebAppInitData, type TelegramIdentity } from "../auth/telegram";
-import { findUser, upsertTelegramUser, userView } from "../auth/users";
+import { endSessions, findUser, upsertTelegramUser, userView } from "../auth/users";
 import type { AppDeps, AppEnv } from "../deps";
 import { readBody } from "../http/body";
 import { HttpError, unauthenticated } from "../http/errors";
@@ -33,7 +33,8 @@ export function authRoutes(deps: AppDeps) {
       throw refused();
     }
     const user = await upsertTelegramUser(deps.db, identity, deps.now());
-    setCookie(c, sessionCookieName, issueSession(user.id, deps.env.SESSION_SECRET, deps.now()), {
+    const session = { userId: user.id, epoch: user.sessionEpoch };
+    setCookie(c, sessionCookieName, issueSession(session, deps.env.SESSION_SECRET, deps.now()), {
       ...sessionCookieOptions,
       maxAge: sessionLifetimeMs / 1000,
     });
@@ -50,7 +51,11 @@ export function authRoutes(deps: AppDeps) {
       const fields = await readBody(c, widgetBody);
       return signIn(c, verifyLoginWidget(fields, deps.env.TELEGRAM_BOT_TOKEN, nowSeconds()));
     })
-    .post("/auth/logout", (c) => {
+    .post("/auth/logout", async (c) => {
+      const session = sessionFromCookie(c, deps);
+      if (session !== null) {
+        await endSessions(deps.db, session);
+      }
       deleteCookie(c, sessionCookieName, sessionCookieOptions);
       return c.body(null, 204);
     })

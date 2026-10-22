@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { bigint, check, pgTable, primaryKey, text, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  check,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { id, instant } from "./columns";
 
 export const users = pgTable(
@@ -9,10 +18,12 @@ export const users = pgTable(
     telegramUserId: bigint("telegram_user_id", { mode: "number" }).notNull(),
     displayName: text("display_name").notNull(),
     telegramUsername: text("telegram_username"),
+    sessionEpoch: integer("session_epoch").notNull().default(0),
     createdAt: instant("created_at").notNull(),
   },
   (table) => [
     unique("users_telegram_user_id_unique").on(table.telegramUserId),
+    check("users_session_epoch_not_negative", sql`${table.sessionEpoch} >= 0`),
     check("users_telegram_user_id_positive", sql`${table.telegramUserId} > 0`),
   ],
 );

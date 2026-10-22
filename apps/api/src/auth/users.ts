@@ -1,5 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { users, type Executor, type UserRow } from "@cadence/db";
+import type { Session } from "./session";
 import type { TelegramIdentity } from "./telegram";
 
 export async function upsertTelegramUser(
@@ -33,3 +34,10 @@ export async function findUser(db: Executor, userId: string): Promise<UserRow | 
 }
 
 export const userView = (user: UserRow) => ({ id: user.id, displayName: user.displayName });
+
+export async function endSessions(db: Executor, session: Session): Promise<void> {
+  await db
+    .update(users)
+    .set({ sessionEpoch: sql`${users.sessionEpoch} + 1` })
+    .where(and(eq(users.id, session.userId), eq(users.sessionEpoch, session.epoch)));
+}

@@ -1,8 +1,11 @@
+import { eq } from "drizzle-orm";
+import { users } from "@cadence/db";
+import type { Context } from "hono";
 import { getCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
 import type { AppDeps, AppEnv } from "../deps";
 import { forbidden, unauthenticated } from "../http/errors";
-import { readSession, sessionCookieName } from "./session";
+import { readSession, sessionCookieName, type Session } from "./session";
 
 export const sessionCookieOptions = {
   httpOnly: true,
@@ -11,15 +14,27 @@ export const sessionCookieOptions = {
   path: "/",
 } as const;
 
-export const requireUser = (deps: Pick<AppDeps, "env" | "now">) =>
+type SessionDeps = Pick<AppDeps, "db" | "env" | "now">;
+
+export function sessionFromCookie(c: Context, deps: SessionDeps): Session | null {
+  const token = getCookie(c, sessionCookieName);
+  return token === undefined ? null : readSession(token, deps.env.SESSION_SECRET, deps.now());
+}
+
+export const requireUser = (deps: SessionDeps) =>
   createMiddleware<AppEnv>(async (c, next) => {
-    const token = getCookie(c, sessionCookieName);
-    const userId =
-      token === undefined ? null : readSession(token, deps.env.SESSION_SECRET, deps.now());
-    if (userId === null) {
+    const session = sessionFromCookie(c, deps);
+    if (session === null) {
       throw unauthenticated();
     }
-    c.set("userId", userId);
+    const [user] = await deps.db
+      .select({ sessionEpoch: users.sessionEpoch })
+      .from(users)
+      .where(eq(users.id, session.userId));
+    if (user?.sessionEpoch !== session.epoch) {
+      throw unauthenticated();
+    }
+    c.set("userId", session.userId);
     await next();
   });
 

@@ -88,11 +88,29 @@ describe("sessions on requests", () => {
     const cookie = await signIn(app, ada);
     const forged = `${cookie.slice(0, -2)}xx`;
     const [row] = await db.select().from(users);
-    const foreign = issueSession(row?.id ?? "", "another-secret-that-is-long-enough-1234", testNow);
+    const foreign = issueSession(
+      { userId: row?.id ?? "", epoch: row?.sessionEpoch ?? 0 },
+      "another-secret-that-is-long-enough-1234",
+      testNow,
+    );
     expect((await call(app, "GET", "/api/me", { cookie: forged })).status).toBe(401);
     expect(
       (await call(app, "GET", "/api/me", { cookie: `cadence_session=${foreign}` })).status,
     ).toBe(401);
+  });
+
+  it("ends every copy of the session at sign-out, and a new sign-in works", async () => {
+    const { app } = testApp();
+    const kept = await signIn(app, ada);
+    await call(app, "POST", "/api/auth/logout", { cookie: kept });
+    expect((await call(app, "GET", "/api/me", { cookie: kept })).status).toBe(401);
+    const fresh = await signIn(app, ada);
+    expect((await call(app, "GET", "/api/me", { cookie: fresh })).status).toBe(200);
+  });
+
+  it("signs out without a session too", async () => {
+    const { app } = testApp();
+    expect((await call(app, "POST", "/api/auth/logout")).status).toBe(204);
   });
 
   it("signs out by clearing the cookie", async () => {
