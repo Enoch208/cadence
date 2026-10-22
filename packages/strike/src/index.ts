@@ -2,3 +2,6 @@ export * from "./client";
 export * from "./signer";
 export * from "./canonical";
 export * from "./clock";
+export * from "./errors";
+export * from "./orders";
+export * from "./live-client";
