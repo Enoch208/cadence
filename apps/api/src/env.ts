@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { positiveDecimalSchema } from "@cadence/core";
+import { builderCodeSchema } from "@cadence/strike";
 import { z } from "zod";
 
 const webOrigin = z
@@ -24,6 +25,7 @@ export const apiEnvSchema = z.object({
     .default("https://api.strikefinance.org")
     .transform((value) => value.replace(/\/+$/, "")),
   CADENCE_LIVE_MAX_NOTIONAL: positiveDecimalSchema,
+  STRIKE_BUILDER_CODE: builderCodeSchema.optional(),
   ANTHROPIC_API_KEY: z
     .string()
     .regex(/^sk-ant-[\w-]{20,}$/)

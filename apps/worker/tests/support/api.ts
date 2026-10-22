@@ -60,6 +60,7 @@ export function cadenceApi(clock: TestClock): CadenceApi {
       },
     },
     drafter: null,
+    builderConnect: null,
     now: clock.now,
   });
 }

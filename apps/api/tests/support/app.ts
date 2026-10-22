@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import type { MarketRules } from "@cadence/core";
 import { clientForConnection } from "@cadence/db";
+import type { BuilderConnectClient } from "@cadence/strike";
 import { createApp } from "../../src/app";
 import type { PlanDrafter } from "../../src/drafting/contract";
 import { loadApiEnv } from "../../src/env";
@@ -26,9 +27,14 @@ const refuseNetwork: typeof fetch = () =>
 
 export const testKeyEncryptionKey = Uint8Array.from(Buffer.from(testEnv.KEY_ENCRYPTION_KEY, "hex"));
 
-export function testApp(
-  options: { markets?: readonly MarketRules[]; now?: () => number; drafter?: PlanDrafter } = {},
-) {
+type TestAppOptions = {
+  markets?: readonly MarketRules[];
+  now?: () => number;
+  drafter?: PlanDrafter;
+  builderConnect?: BuilderConnectClient;
+};
+
+export function testApp(options: TestAppOptions = {}) {
   const now = options.now ?? (() => testNow);
   const markets = options.markets ?? [btcUsd, ethUsd, dogeUsdPreTrading];
   const telegram = new RecordingTelegram();
@@ -56,6 +62,7 @@ export function testApp(
     },
     telegram,
     drafter: options.drafter ?? null,
+    builderConnect: options.builderConnect ?? null,
     now,
   });
   return { app, telegram, live: live.state };

@@ -86,6 +86,22 @@ describe("API environment", () => {
     expect(message).not.toContain("not-an-anthropic-key-at-all");
   });
 
+  it("leaves wallet connect off without a builder code and refuses one Strike cannot hold", () => {
+    expect(loadApiEnv(complete).STRIKE_BUILDER_CODE).toBeUndefined();
+    expect(
+      loadApiEnv({ ...complete, STRIKE_BUILDER_CODE: "" }).STRIKE_BUILDER_CODE,
+    ).toBeUndefined();
+    expect(loadApiEnv({ ...complete, STRIKE_BUILDER_CODE: "cadence_1" }).STRIKE_BUILDER_CODE).toBe(
+      "cadence_1",
+    );
+    expect(failure({ ...complete, STRIKE_BUILDER_CODE: "cadence code" })).toContain(
+      "Invalid: STRIKE_BUILDER_CODE",
+    );
+    expect(failure({ ...complete, STRIKE_BUILDER_CODE: "c".repeat(65) })).toContain(
+      "Invalid: STRIKE_BUILDER_CODE",
+    );
+  });
+
   it("refuses a Strike base that is not https", () => {
     expect(failure({ ...complete, STRIKE_API_BASE: "http://api.strikefinance.org" })).toContain(
       "Invalid: STRIKE_API_BASE",

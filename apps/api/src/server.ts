@@ -3,6 +3,7 @@ import { serve } from "@hono/node-server";
 import { Api } from "grammy";
 import { clientForConnection, createDb, strikeTimeoutMs } from "@cadence/db";
 import {
+  createBuilderConnectClient,
   createLiveStrikeClient,
   createPublicStrikeClient,
   createServerClock,
@@ -52,6 +53,10 @@ const app = createApp({
       : createClaudeDrafter(
           new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 45_000, maxRetries: 1 }),
         ),
+  builderConnect:
+    env.STRIKE_BUILDER_CODE === undefined
+      ? null
+      : createBuilderConnectClient({ ...exchange, builderCode: env.STRIKE_BUILDER_CODE, now }),
   now,
 });
 
