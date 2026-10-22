@@ -8,3 +8,8 @@ export const Exact = Decimal.clone({
 });
 
 export const quotePlaces = 8;
+
+export const moneyPlaces = 2;
+
+export const roundTo = (value: Decimal, places: number, rounding: Decimal.Rounding): string =>
+  value.toDecimalPlaces(places, rounding).toFixed(places);

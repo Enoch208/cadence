@@ -65,6 +65,15 @@ export function withinPriceBounds(args: {
   );
 }
 
+export function isOrderablePrice(price: DecimalString, market: MarketRules): boolean {
+  const value = new Exact(price);
+  return (
+    value.greaterThanOrEqualTo(market.minPrice) &&
+    value.lessThanOrEqualTo(market.maxPrice) &&
+    value.equals(floorToGrid(price, market.minPrice, market.tickSize))
+  );
+}
+
 export function fillableSize(args: {
   direction: Direction;
   book: BookSnapshot;
