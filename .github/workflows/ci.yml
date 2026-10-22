@@ -16,6 +16,20 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: cadence
+          POSTGRES_PASSWORD: cadence
+          POSTGRES_DB: cadence_test
+        ports:
+          - "54340:5432"
+        options: >-
+          --health-cmd "pg_isready -U cadence -d cadence_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -35,6 +49,10 @@ jobs:
         run: pnpm lint
       - name: Check formatting
         run: pnpm format:check
+      - name: Migrate the test database
+        run: pnpm --filter @cadence/db db:migrate
+        env:
+          DATABASE_URL: postgres://cadence:cadence@127.0.0.1:54340/cadence_test
       - name: Test
         run: pnpm test
       - name: Build
