@@ -108,7 +108,11 @@ describe("a write Strike definitively refused", () => {
     );
     const error = await rejection(transport.send(write));
     expect(error).toBeInstanceOf(StrikeRejectedError);
-    expect(error).toMatchObject({ status: 400, code: "invalid_stop_price" });
+    expect(error).toMatchObject({
+      status: 400,
+      code: "invalid_stop_price",
+      strikeMessage: "invalid stop price",
+    });
     expect((error as Error).message).toContain("invalid stop price");
   });
 

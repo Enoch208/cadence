@@ -3,6 +3,7 @@ export class StrikeRejectedError extends Error {
   readonly operation: string;
   readonly status: number;
   readonly code: string | null;
+  readonly strikeMessage: string;
 
   constructor(args: { operation: string; status: number; code: string | null; message: string }) {
     const code = args.code === null ? "" : ` ${args.code}`;
@@ -12,6 +13,7 @@ export class StrikeRejectedError extends Error {
     this.operation = args.operation;
     this.status = args.status;
     this.code = args.code;
+    this.strikeMessage = args.message;
   }
 }
 

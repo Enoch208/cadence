@@ -6,7 +6,7 @@ import {
 } from "@cadence/strike";
 import { describeFailure, HttpError, unprocessable } from "./errors";
 
-export const refusedKey = (error: unknown): error is StrikeRejectedError | StrikeReadError =>
+const refusedKey = (error: unknown): error is StrikeRejectedError | StrikeReadError =>
   (error instanceof StrikeRejectedError || error instanceof StrikeReadError) &&
   (error.status === 401 || error.status === 403);
 

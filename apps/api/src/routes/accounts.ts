@@ -1,6 +1,12 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { replayScenarioNames } from "@cadence/strike";
+import { replayScenarioNames, walletAddressSchema, type WalletChain } from "@cadence/strike";
+import {
+  builderAvailability,
+  builderClient,
+  finishBuilderConnect,
+  startBuilderConnect,
+} from "../accounts/builder";
 import { connectLiveAccount, connectReplayAccount } from "../accounts/connect";
 import { listAccounts, missingAccount, setAccountStatus } from "../accounts/service";
 import { requireUser } from "../auth/middleware";
@@ -17,6 +23,20 @@ const liveBody = z.strictObject({
 
 const replayBody = z.strictObject({ scenario: z.enum(replayScenarioNames) });
 
+const walletBody = <Chain extends WalletChain>(chain: Chain) =>
+  z.strictObject({ chain: z.literal(chain), address: walletAddressSchema(chain) });
+
+const builderStartBody = z.discriminatedUnion("chain", [
+  walletBody("ethereum"),
+  walletBody("solana"),
+  walletBody("cardano"),
+]);
+
+const builderFinishBody = z.strictObject({
+  challengeId: z.uuid(),
+  signature: z.string().min(1).max(8192),
+});
+
 const missing = missingAccount().message;
 
 export function accountRoutes(deps: AppDeps) {
@@ -28,6 +48,17 @@ export function accountRoutes(deps: AppDeps) {
     .post("/accounts", signedIn, async (c) => {
       const keys = await readBody(c, liveBody);
       return c.json(await connectLiveAccount(deps, c.get("userId"), keys), 201);
+    })
+    .get("/accounts/builder", signedIn, (c) => c.json(builderAvailability(deps)))
+    .post("/accounts/builder/start", signedIn, async (c) => {
+      builderClient(deps);
+      const wallet = await readBody(c, builderStartBody);
+      return c.json(await startBuilderConnect(deps, c.get("userId"), wallet), 201);
+    })
+    .post("/accounts/builder/finish", signedIn, async (c) => {
+      builderClient(deps);
+      const input = await readBody(c, builderFinishBody);
+      return c.json(await finishBuilderConnect(deps, c.get("userId"), input), 201);
     })
     .post("/accounts/replay", signedIn, async (c) => {
       const { scenario } = await readBody(c, replayBody);
