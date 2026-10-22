@@ -53,6 +53,59 @@ export type IntentState = (typeof intentStates)[number];
 export const orderRoles = ["entry", "stop", "target", "recovery_close"] as const;
 export type OrderRole = (typeof orderRoles)[number];
 
+export const intentEvents = [
+  "validation_failed",
+  "approved",
+  "submit_attempted",
+  "submit_timed_out",
+  "acknowledged",
+  "exchange_rejected",
+  "entry_unfilled",
+  "entry_canceled",
+  "entry_window_closed",
+  "fill_observed",
+  "exits_verified",
+  "exits_missing",
+  "recovery_confirmed",
+  "close_reconciled",
+] as const;
+export type IntentEvent = (typeof intentEvents)[number];
+
+export const orderSides = ["buy", "sell"] as const;
+export type OrderSide = (typeof orderSides)[number];
+
+export const exchangeOrderStatuses = [
+  "pending",
+  "open",
+  "filled",
+  "canceled",
+  "untriggered",
+  "rejected",
+  "expired",
+] as const;
+export type ExchangeOrderStatus = (typeof exchangeOrderStatuses)[number];
+
+export const marketStatuses = ["pre_trading", "trading", "break", "close"] as const;
+export type MarketStatus = (typeof marketStatuses)[number];
+
+export const marginModes = ["cross", "isolated"] as const;
+export type MarginMode = (typeof marginModes)[number];
+
+export const limitingFactors = [
+  "budget",
+  "ceiling",
+  "depth",
+  "margin",
+  "max_order_size",
+  "leverage_tier",
+] as const;
+export type LimitingFactor = (typeof limitingFactors)[number];
+
+export const decimalStringSchema = z
+  .string()
+  .regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/, "Use a plain decimal such as -0.5 or 100");
+export type DecimalString = z.infer<typeof decimalStringSchema>;
+
 const positiveDecimalPattern = /^(?:[1-9]\d*(?:\.\d+)?|0\.\d*[1-9]\d*)$/;
 
 export const positiveDecimalSchema = z

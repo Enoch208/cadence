@@ -1,0 +1,19 @@
+{
+  "name": "@cadence/worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cadence/core": "workspace:*",
+    "@cadence/db": "workspace:*",
+    "@cadence/strike": "workspace:*",
+    "decimal.js": "10.6.0",
+    "drizzle-orm": "0.45.4",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
+  }
+}
