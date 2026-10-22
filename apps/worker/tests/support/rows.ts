@@ -196,8 +196,8 @@ export async function approve(member: Member, planVersionId: string, decision: D
       actor: `user:${member.user.id}`,
       correlationId: id,
       environment: member.connection.environment,
-      type: "approved",
-      data: { from: "prepared", to: "reserved" },
+      type: "intent_reserved",
+      data: { quantity: proposal.quantity, limitPrice: proposal.limitPrice },
     });
     return intent;
   });

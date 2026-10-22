@@ -61,7 +61,7 @@ describe("reconciling a filled entry", () => {
     const { quantity } = intent.approved;
 
     expect(await eventTypes(intent.id)).toEqual([
-      "approved",
+      "intent_reserved",
       "submit_attempted",
       "acknowledged",
       "fill_observed",
@@ -167,7 +167,7 @@ describe("recovering missing exits", () => {
 
     expect(await reconcileIntent(deps, intent.id)).toBe("closed");
     expect(await eventTypes(intent.id)).toEqual([
-      "approved",
+      "intent_reserved",
       "submit_attempted",
       "acknowledged",
       "fill_observed",
@@ -240,7 +240,7 @@ describe("reconciling an entry that did not open a position", () => {
 
     expect(await reconcileIntent(deps, intent.id)).toBe("open_verified");
     expect(await eventTypes(intent.id)).toEqual([
-      "approved",
+      "intent_reserved",
       "submit_attempted",
       "submit_timed_out",
       "acknowledged",

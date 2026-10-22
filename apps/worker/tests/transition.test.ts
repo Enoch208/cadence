@@ -29,7 +29,7 @@ describe("moving an intent through its lifecycle", () => {
     });
     expect(await intentState(intent.id)).toBe("unknown");
     expect(await eventTypes(intent.id)).toEqual([
-      "approved",
+      "intent_reserved",
       "submit_attempted",
       "submit_timed_out",
     ]);
@@ -45,7 +45,7 @@ describe("moving an intent through its lifecycle", () => {
       }),
     ).rejects.toBeInstanceOf(IllegalTransitionError);
     expect(await intentState(intent.id)).toBe("reserved");
-    expect(await eventTypes(intent.id)).toEqual(["approved"]);
+    expect(await eventTypes(intent.id)).toEqual(["intent_reserved"]);
   });
 
   it("throws when the intent already left the state the worker read", async () => {
@@ -57,6 +57,6 @@ describe("moving an intent through its lifecycle", () => {
         );
       }),
     ).rejects.toBeInstanceOf(StaleIntentError);
-    expect(await eventTypes(intent.id)).toEqual(["approved"]);
+    expect(await eventTypes(intent.id)).toEqual(["intent_reserved"]);
   });
 });

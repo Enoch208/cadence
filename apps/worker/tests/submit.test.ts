@@ -60,12 +60,40 @@ describe("submitting an approved intent", () => {
       ["target", clientOrderIdFor(intent.id, "target"), digest],
     ]);
     expect(await intentState(intent.id)).toBe("submitted");
-    expect(await eventTypes(intent.id)).toEqual(["approved", "submit_attempted", "acknowledged"]);
+    expect(await eventTypes(intent.id)).toEqual([
+      "intent_reserved",
+      "submit_attempted",
+      "acknowledged",
+    ]);
     expect(await reservationStatus(intent.id)).toBe("active");
     expect(await outboxOf(intent.id)).toContainEqual({ kind: "reconcile", status: "pending" });
 
     await expect(submitIntent(deps, intent.id)).resolves.toBe("not_reserved");
     expect(replay.submittedStrategies()).toHaveLength(1);
+  });
+
+  it("never sends a submitted intent again, even while Strike shows nothing for it yet", async () => {
+    let sends = 0;
+    const { intent, deps } = await approved({
+      client: (inner) => ({
+        ...inner,
+        placeStrategy: (order) => {
+          sends += 1;
+          return Promise.resolve({
+            strategyId: order.strategyId,
+            entryClientOrderId: order.entryClientOrderId,
+            accountId: "replay:happy_path",
+            acknowledgedAt: 0,
+          });
+        },
+      }),
+    });
+
+    await expect(submitIntent(deps, intent.id)).resolves.toBe("acknowledged");
+    await expect(submitIntent(deps, intent.id)).resolves.toBe("not_reserved");
+
+    expect(sends).toBe(1);
+    expect(await orderRowsOf(intent.id)).toHaveLength(3);
   });
 
   it("blocks with PLAN_SUPERSEDED and sends nothing when the plan was corrected after approval", async () => {
