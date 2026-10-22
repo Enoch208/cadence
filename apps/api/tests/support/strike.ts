@@ -1,5 +1,10 @@
 import type { MarketRules } from "@cadence/core";
-import type { StrikeClient, SymbolConfiguration } from "@cadence/strike";
+import {
+  createReplayStrikeClient,
+  replayScenarios,
+  type StrikeClient,
+  type SymbolConfiguration,
+} from "@cadence/strike";
 
 const marginTiers = [
   {
@@ -75,8 +80,17 @@ export function stubLiveExchange(markets: readonly MarketRules[], now: () => num
     configured: [] as { symbol: string; settings: SymbolConfiguration }[],
     signedBy: [] as string[],
   };
+  const market = createReplayStrikeClient(replayScenarios.happy_path, now);
+  const settingsFor = (symbol: string) =>
+    state.configured.findLast((entry) => entry.symbol === symbol)?.settings ?? {
+      marginMode: "cross" as const,
+      leverage: 10,
+    };
   const client: StrikeClient = {
     ...stubStrikeClient(markets),
+    book: (symbol, depth) => market.book(symbol, depth),
+    mark: (symbol) => market.mark(symbol),
+    fees: () => market.fees(),
     accountState: (symbol) =>
       state.refusal === null
         ? Promise.resolve({
@@ -88,7 +102,7 @@ export function stubLiveExchange(markets: readonly MarketRules[], now: () => num
             },
             positions: [],
             openOrders: [],
-            symbolSettings: { symbol, marginMode: "cross", leverage: 10 },
+            symbolSettings: { symbol, ...settingsFor(symbol) },
           })
         : Promise.reject(state.refusal),
     configureSymbol: (symbol, settings) => {

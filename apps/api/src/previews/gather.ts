@@ -13,6 +13,7 @@ import { readDecisionSnapshot, type StrikeClient } from "@cadence/strike";
 import type { AppDeps } from "../deps";
 import { conflict } from "../http/errors";
 import { askStrike } from "../http/strike";
+import { liveQuantityCeiling } from "./live-ceiling";
 
 const unresolvedStates = ["unknown", "recovery_required"] as const;
 
@@ -66,7 +67,13 @@ export async function gatherDecisionInput(
       isCurrentVersion: plan.currentVersion === version.version,
     },
     policy: args.policy,
-    quantityCeiling: args.quantityCeiling,
+    quantityCeiling: liveQuantityCeiling({
+      environment: account.environment,
+      requested: args.quantityCeiling,
+      entryMax: version.payload.entryMax,
+      liveMaxNotional: deps.env.CADENCE_LIVE_MAX_NOTIONAL,
+      step: snapshot.market.limitStepSize,
+    }),
     accountState: snapshot.accountState,
     accountReconciled: await accountReconciled(deps.db, account.id),
     exposure: await loadExposure(deps.db, account.id, now),
