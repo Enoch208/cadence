@@ -38,6 +38,9 @@ export function DecisionPanel({ decision, plan }: { decision: Decision; plan: Pl
               {resizedReasonCopy(reason)}
             </p>
           ))}
+          {plan.environment === "live" && decision.proposal.limitedBy === "ceiling" ? (
+            <p className="t-body">Sized to the most Cadence sends in one live order.</p>
+          ) : null}
           <TicketRows
             rows={[
               ["Size", `${decision.proposal.quantity} ${plan.market.split("-")[0] ?? ""}`],
