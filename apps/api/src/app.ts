@@ -7,6 +7,8 @@ import { limitBodySize } from "./http/body";
 import { describeFailure, HttpError } from "./http/errors";
 import { accountRoutes } from "./routes/accounts";
 import { authRoutes } from "./routes/auth";
+import { eventRoutes } from "./routes/events";
+import { intentRoutes } from "./routes/intents";
 import { communityRoutes } from "./routes/communities";
 import { planRoutes } from "./routes/plans";
 import { policyRoutes } from "./routes/policies";
@@ -26,6 +28,8 @@ export function createApp(deps: AppDeps) {
     .route("/api", accountRoutes(deps))
     .route("/api", policyRoutes(deps))
     .route("/api", previewRoutes(deps))
+    .route("/api", intentRoutes(deps))
+    .route("/api", eventRoutes(deps))
     .notFound((c) =>
       c.json({ code: "NOT_FOUND", message: "There is nothing at this address." }, 404),
     )

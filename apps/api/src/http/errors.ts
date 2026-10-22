@@ -22,7 +22,7 @@ export const unauthenticated = () =>
 
 export const forbidden = (code: string, message: string) => new HttpError(403, code, message);
 
-export const notFound = (message: string) => new HttpError(404, "NOT_FOUND", message);
+export const notFound = (message: string, code = "NOT_FOUND") => new HttpError(404, code, message);
 
 export const conflict = (code: string, message: string) => new HttpError(409, code, message);
 
