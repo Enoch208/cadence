@@ -1,0 +1,21 @@
+{
+  "fills": [
+    {
+      "id": 9007199254740997,
+      "trade_id": 48213377,
+      "order_id": 9007199254740991,
+      "account_id": "5f0c1a7e-3b2d-4c8e-9f1a-2d3c4b5a6e7f",
+      "symbol": "BTC-USD",
+      "side": "buy",
+      "role": "taker",
+      "price": "84482",
+      "size": "0.00012",
+      "realized_pnl": "0",
+      "fee": "0.00506892",
+      "fee_type": "commission",
+      "timestamp": 1792603889015,
+      "auto_close_type": null
+    }
+  ],
+  "count": 1
+}

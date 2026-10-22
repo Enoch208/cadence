@@ -1,0 +1,8 @@
+{
+  "default_margin_mode": "cross",
+  "default_leverage": 10,
+  "symbol_settings": {
+    "BTC-USD": { "margin_mode": "isolated", "leverage": 5 },
+    "ETH-USD": { "margin_mode": "cross", "leverage": 20 }
+  }
+}

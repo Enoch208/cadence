@@ -1,0 +1,24 @@
+{
+  "account_id": "5f0c1a7e-3b2d-4c8e-9f1a-2d3c4b5a6e7f",
+  "name": "Cadence",
+  "parent_account_id": "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+  "parent_blockchain_address": "addr1qxexampleparentaddress",
+  "blockchain": "",
+  "blockchain_address": null,
+  "wallet_balance": "25.00",
+  "available_balance": "22.96",
+  "copy_reserved_balance": "0",
+  "copy_deployed_margin": "0",
+  "copy_profit_share_reserved": "0",
+  "unrealized_pnl": "0.00108",
+  "margin_balance": "25.00108",
+  "total_margin": "2.06811",
+  "position_initial_margin": "2.02756",
+  "maintenance_margin": "0.04055",
+  "sub_accounts": [],
+  "default_margin_mode": "cross",
+  "default_leverage": 10,
+  "symbol_settings": {
+    "BTC-USD": { "margin_mode": "isolated", "leverage": 5, "allow_pre_trade": false }
+  }
+}

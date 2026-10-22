@@ -1,0 +1,22 @@
+{
+  "positions": [
+    {
+      "id": 7340032,
+      "account_id": "5f0c1a7e-3b2d-4c8e-9f1a-2d3c4b5a6e7f",
+      "margin_mode": "isolated",
+      "leverage": 5,
+      "size": "0.00012",
+      "entry_price": "84482",
+      "iso_balance": "2.02756",
+      "accumulated_funding_fees": "0",
+      "create_timestamp": 1792603890000,
+      "update_timestamp": 1792603890000,
+      "symbol": "BTC-USD",
+      "upnl": "0.00108",
+      "maintenance_margin": "0.04055",
+      "bankruptcy_price": "67585.6",
+      "liquidation_price": "67857"
+    }
+  ],
+  "count": 1
+}
