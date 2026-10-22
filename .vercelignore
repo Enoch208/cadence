@@ -1,0 +1,13 @@
+/*
+!/apps
+!/packages
+!/package.json
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/tsconfig.base.json
+!/.npmrc
+!/.nvmrc
+!/vercel.json
+**/node_modules
+**/dist
+**/tests
