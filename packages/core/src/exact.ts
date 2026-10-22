@@ -6,3 +6,5 @@ export const Exact = Decimal.clone({
   toExpNeg: -9e15,
   toExpPos: 9e15,
 });
+
+export const quotePlaces = 8;
