@@ -13,7 +13,9 @@
     "format": "prettier --write . --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude",
     "format:check": "prettier --check . --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:generate": "pnpm --filter @cadence/db db:generate",
+    "db:migrate": "pnpm --filter @cadence/db db:migrate"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
