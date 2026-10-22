@@ -5,13 +5,20 @@ import { Field } from "@/components/app/Field";
 import { LoginGate } from "@/components/app/LoginGate";
 import { Loading, Problem } from "@/components/app/Notice";
 import { ActionButton } from "@/components/ui/Button";
+import { sourcedAccountsSchema, type SourcedAccount } from "@/lib/api/builder";
 import { apiRequest } from "@/lib/api/client";
-import { accountSchema, accountsSchema, type ConnectedAccount } from "@/lib/api/schemas";
+import { accountSchema } from "@/lib/api/schemas";
 import { useResource } from "@/lib/use-resource";
 import { ReplayAccounts } from "./ReplayAccounts";
 import { RiskRules } from "./RiskRules";
+import { WalletConnect } from "./WalletConnect";
 
-function AccountRow({ account, onChanged }: { account: ConnectedAccount; onChanged: () => void }) {
+const connectedBy = {
+  api_key: "Connected with a pasted API key",
+  builder: "Main account, connected with a wallet signature",
+} as const;
+
+function AccountRow({ account, onChanged }: { account: SourcedAccount; onChanged: () => void }) {
   const [problem, setProblem] = useState<string | null>(null);
   const toggle = async () => {
     const action = account.status === "paused" ? "resume" : "pause";
@@ -35,6 +42,9 @@ function AccountRow({ account, onChanged }: { account: ConnectedAccount; onChang
         </span>
         <EnvironmentBadge environment={account.environment} />
       </div>
+      {account.credentialSource === null ? null : (
+        <span className="t-body">{connectedBy[account.credentialSource]}</span>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="t-body">
           {account.status === "paused" ? "Paused: no new entries" : "Active"}
@@ -106,8 +116,9 @@ function ConnectLive({ onConnected }: { onConnected: () => void }) {
 
 function Accounts() {
   const accounts = useResource("accounts", (signal) =>
-    apiRequest(accountsSchema, "/api/accounts", { signal }),
+    apiRequest(sourcedAccountsSchema, "/api/accounts", { signal }),
   );
+  const [walletConnected, setWalletConnected] = useState<string | null>(null);
   if (accounts.status !== "ready") {
     return accounts.status === "failed" ? (
       <Problem title="Your accounts could not be loaded" onRetry={accounts.reload}>
@@ -131,6 +142,13 @@ function Accounts() {
           </ul>
         )}
       </Panel>
+      <WalletConnect
+        connectedAccountId={walletConnected}
+        onConnected={(strikeAccountId) => {
+          setWalletConnected(strikeAccountId);
+          accounts.reload();
+        }}
+      />
       <ConnectLive onConnected={accounts.reload} />
       <ReplayAccounts onAdded={accounts.reload} />
       <RiskRules />
