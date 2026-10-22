@@ -65,3 +65,8 @@ export interface StrikeClient {
   closeReduceOnly(order: ReduceOnlyClose): Promise<OrderAck>;
   configureSymbol(symbol: string, settings: SymbolConfiguration): Promise<void>;
 }
+
+export type StrikePublicClient = Pick<
+  StrikeClient,
+  "environment" | "serverTime" | "markets" | "book" | "mark" | "fees"
+>;

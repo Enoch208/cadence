@@ -4,25 +4,10 @@ import type { OrderAck, StrategyAck, StrikeClient, SymbolConfiguration } from ".
 import type { ServerClock } from "./clock";
 import { StrikeAmbiguousError } from "./errors";
 import { createAccountReads } from "./live-account";
-import {
-  misreported,
-  publicRead,
-  readShaped,
-  shaped,
-  signedRead,
-  signedWrite,
-} from "./live-requests";
-import {
-  toBookSnapshot,
-  toFeeSchedule,
-  toMarketRules,
-  toMarkSnapshot,
-  toOrderAck,
-  toServerTime,
-  toStrategyAck,
-  toSymbolSettings,
-} from "./normalize";
+import { readShaped, shaped, signedRead, signedWrite } from "./live-requests";
+import { toOrderAck, toStrategyAck, toSymbolSettings } from "./normalize";
 import { reduceOnlyCloseBody, strategyRequestBody } from "./orders";
+import { createPublicReads, readServerTime } from "./public-reads";
 import type { Signer } from "./signer";
 import { createTransport, type Authenticate, type TransportRequest } from "./transport";
 
@@ -43,12 +28,6 @@ const acknowledgedOther = (operation: string) =>
     reason: "response",
     detail: "Strike acknowledged a different order than the one sent",
   });
-
-function assertWhole(value: number, min: number, max: number, what: string) {
-  if (!Number.isInteger(value) || value < min || value > max) {
-    throw new RangeError(`${what} must be a whole number from ${String(min)} to ${String(max)}`);
-  }
-}
 
 export function createLiveStrikeClient(args: LiveStrikeClientArgs): StrikeClient {
   const { clock, signer, now } = args;
@@ -76,11 +55,9 @@ export function createLiveStrikeClient(args: LiveStrikeClientArgs): StrikeClient
   });
 
   async function serverTime(): Promise<number> {
-    const request = publicRead("serverTime", "/v2/time");
-    const reply = await transport.send(request);
-    const time = shaped(request, () => toServerTime(reply.body));
-    clock.observe({ sentAt: reply.sentAt, receivedAt: reply.receivedAt, serverTime: time });
-    return time;
+    const sample = await readServerTime(transport);
+    clock.observe(sample);
+    return sample.serverTime;
   }
 
   async function ensureClock(): Promise<void> {
@@ -100,7 +77,9 @@ export function createLiveStrikeClient(args: LiveStrikeClientArgs): StrikeClient
   }
 
   async function configureSymbol(symbol: string, settings: SymbolConfiguration): Promise<void> {
-    assertWhole(settings.leverage, 1, 125, "Leverage");
+    if (!Number.isInteger(settings.leverage) || settings.leverage < 1 || settings.leverage > 125) {
+      throw new RangeError("Leverage must be a whole number from 1 to 125");
+    }
     const current = await readShaped(transport, signedRead("symbols", "/v2/symbols"), (reply) =>
       toSymbolSettings(reply.body, symbol),
     );
@@ -122,34 +101,7 @@ export function createLiveStrikeClient(args: LiveStrikeClientArgs): StrikeClient
   return {
     environment: "live",
     serverTime,
-    markets: () =>
-      readShaped(transport, publicRead("markets", "/v2/markets"), (reply) =>
-        toMarketRules(reply.body),
-      ),
-    book: async (symbol, depth) => {
-      assertWhole(depth, 1, 1000, "Book depth");
-      const query = [
-        ["symbol", symbol],
-        ["limit", String(depth)],
-      ] as const;
-      return readShaped(transport, publicRead("book", "/price/v2/depth", query), (reply) =>
-        toBookSnapshot(reply.body, symbol, reply.sentAt),
-      );
-    },
-    mark: async (symbol) => {
-      const request = publicRead("mark", "/price/v2/markPrice", [["symbol", symbol]]);
-      const mark = await readShaped(transport, request, (reply) =>
-        toMarkSnapshot(reply.body, reply.sentAt),
-      );
-      if (mark.symbol !== symbol) {
-        throw misreported("mark", "Strike answered with the mark price of another symbol");
-      }
-      return mark;
-    },
-    fees: () =>
-      readShaped(transport, publicRead("fees", "/v2/fee-tiers"), (reply) =>
-        toFeeSchedule(reply.body),
-      ),
+    ...createPublicReads(transport),
     ...createAccountReads(transport),
     placeStrategy: async (order): Promise<StrategyAck> => {
       const body = strategyRequestBody(order);
