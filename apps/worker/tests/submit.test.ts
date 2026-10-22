@@ -5,16 +5,9 @@ import {
   publishedPlanSchema,
   sha256Hex,
   strategyIdFor,
-  type Decision,
-  type PublishedPlan,
 } from "@cadence/core";
 import { accountConnections, plans } from "@cadence/db";
-import {
-  createReplayStrikeClient,
-  replayScenarios,
-  strategyRequestBody,
-  type ReplayStrikeClient,
-} from "@cadence/strike";
+import { strategyRequestBody } from "@cadence/strike";
 import { describe, expect, it } from "vitest";
 import { submitIntent } from "../src/submit";
 import { db, resetDatabaseBetweenTests } from "./support/database";
@@ -28,41 +21,11 @@ import {
   receiptOf,
   reservationStatus,
 } from "./support/read";
-import {
-  approve,
-  insertMember,
-  insertPlan,
-  insertPlanVersion,
-  type ConnectionSpec,
-} from "./support/rows";
-import { asLive, previewOn, rejectingStrategies, replayOf, workerDeps } from "./support/strike";
+import { approved } from "./support/flows";
+import { insertPlanVersion } from "./support/rows";
+import { rejectingStrategies } from "./support/strike";
 
 resetDatabaseBetweenTests();
-
-type Setup = {
-  spec?: ConnectionSpec;
-  plan?: PublishedPlan;
-  client?: (replay: ReplayStrikeClient) => ReplayStrikeClient;
-  approved?: (decision: Decision) => Decision;
-  liveMaxNotional?: string;
-};
-
-async function approved(setup: Setup = {}) {
-  const clock = testClock();
-  const spec = setup.spec ?? { environment: "replay", scenario: "happy_path" };
-  const plan = setup.plan ?? replayPlan;
-  const { planRow, version } = await insertPlan(plan);
-  const member = await insertMember(spec);
-  const replay =
-    spec.environment === "replay"
-      ? replayOf(member.connection, clock)
-      : asLive(createReplayStrikeClient(replayScenarios.happy_path, clock.now));
-  const client = setup.client?.(replay) ?? replay;
-  const decision = await previewOn(client, plan, clock.now());
-  const intent = await approve(member, version.id, setup.approved?.(decision) ?? decision);
-  const deps = workerDeps(clock, () => client, setup.liveMaxNotional);
-  return { clock, planRow, member, replay, intent, deps };
-}
 
 describe("submitting an approved intent", () => {
   it("persists the exact order and the submitted state before sending it, then sends it once", async () => {

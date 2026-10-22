@@ -1,8 +1,10 @@
 import { asc, eq } from "drizzle-orm";
 import {
+  accountConnections,
   events,
   exchangeOrders,
   executionIntents,
+  fills,
   outbox,
   receipts,
   reservations,
@@ -58,4 +60,15 @@ export const outboxOf = (intentId: string) =>
 export async function receiptOf(intentId: string) {
   const [row] = await db.select().from(receipts).where(eq(receipts.intentId, intentId));
   return row?.body ?? null;
+}
+
+export const fillsOf = (intentId: string) =>
+  db.select().from(fills).where(eq(fills.intentId, intentId)).orderBy(asc(fills.filledAt));
+
+export async function connectionStatus(connectionId: string) {
+  const [row] = await db
+    .select({ status: accountConnections.status })
+    .from(accountConnections)
+    .where(eq(accountConnections.id, connectionId));
+  return row?.status ?? null;
 }
