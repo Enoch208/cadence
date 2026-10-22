@@ -6,6 +6,8 @@ import type { AppDeps, AppEnv } from "./deps";
 import { limitBodySize } from "./http/body";
 import { describeFailure, HttpError } from "./http/errors";
 import { authRoutes } from "./routes/auth";
+import { communityRoutes } from "./routes/communities";
+import { planRoutes } from "./routes/plans";
 
 export function createApp(deps: AppDeps) {
   return new Hono<AppEnv>()
@@ -16,6 +18,8 @@ export function createApp(deps: AppDeps) {
       return c.json({ status: "ok" });
     })
     .route("/api", authRoutes(deps))
+    .route("/api", communityRoutes(deps))
+    .route("/api", planRoutes(deps))
     .notFound((c) =>
       c.json({ code: "NOT_FOUND", message: "There is nothing at this address." }, 404),
     )
