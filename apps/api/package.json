@@ -9,7 +9,8 @@
     "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
     "start": "tsx --env-file-if-exists=.env src/server.ts",
     "typecheck": "tsc --noEmit",
-    "check:drafting": "tsx --env-file-if-exists=.env scripts/check-drafting.ts"
+    "check:drafting": "tsx --env-file-if-exists=.env scripts/check-drafting.ts",
+    "telegram:set-webhook": "tsx --env-file-if-exists=.env scripts/set-telegram-webhook.ts"
   },
   "dependencies": {
     "@cadence/core": "workspace:*",
