@@ -1,0 +1,291 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter/opsz.css";
+@import "@fontsource-variable/caveat";
+@import "lenis/dist/lenis.css";
+
+@font-face {
+  font-family: "Uncut Sans";
+  src: url("../assets/fonts/UncutSans-Variable.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-md: 810px;
+  --breakpoint-lg: 1300px;
+
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-ink: #1d1d1d;
+  --color-paper: #ffffff;
+  --color-hover: #f7f7f7;
+  --color-lavender: #e3e3ff;
+  --color-sky: #e3f2ff;
+  --color-sky-deep: #d1e8fd;
+  --color-butter: #ffe7a9;
+  --color-butter-deep: #fede8d;
+  --color-mint: #dbf5f0;
+  --color-mint-deep: #c8f0e8;
+  --color-blush: #ffe3fb;
+  --color-blush-deep: #f9d4f4;
+  --color-peach: #fbebea;
+  --color-lime: #e9fac0;
+
+  --font-sans: "Uncut Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-numeral: "Inter Variable", "Inter", ui-sans-serif, sans-serif;
+  --font-hand: "Caveat Variable", "Caveat", cursive;
+
+  --font-weight-lead: 350;
+  --font-weight-body: 375;
+  --font-weight-meta: 475;
+  --font-weight-medium: 500;
+  --font-weight-nav: 525;
+  --font-weight-semibold: 600;
+
+  --radius-btn: 10px;
+  --radius-card: 20px;
+  --radius-chip: 30px;
+  --radius-pill: 50px;
+
+  --shadow-key: inset 0 -5px 0 0 rgb(29 29 29 / 0.15);
+  --shadow-key-sm: inset 0 -4px 0 0 rgb(29 29 29 / 0.15);
+
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-framer: cubic-bezier(0.44, 0, 0.56, 1);
+}
+
+@layer base {
+  html {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-weight: var(--font-weight-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-lavender);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+
+  strong {
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+@utility shell {
+  width: 100%;
+  max-width: 1040px;
+  margin-inline: auto;
+
+  @media (width >= 1300px) {
+    max-width: 1200px;
+  }
+}
+
+@utility t-display {
+  text-wrap: balance;
+  font-size: 50px;
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+  font-weight: var(--font-weight-medium);
+
+  @media (width >= 810px) {
+    font-size: 84px;
+    line-height: 1.05;
+  }
+
+  @media (width >= 1300px) {
+    font-size: 90px;
+  }
+}
+
+@utility t-h2 {
+  text-wrap: balance;
+  font-size: 36px;
+  line-height: 1.125;
+  letter-spacing: -0.04em;
+  font-weight: var(--font-weight-medium);
+
+  @media (width >= 810px) {
+    font-size: 46px;
+  }
+
+  @media (width >= 1300px) {
+    font-size: 50px;
+  }
+}
+
+@utility t-title {
+  text-wrap: balance;
+  font-size: 28px;
+  line-height: 1.175;
+  letter-spacing: -0.03em;
+  font-weight: var(--font-weight-medium);
+
+  @media (width >= 810px) {
+    font-size: 34px;
+  }
+
+  @media (width >= 1300px) {
+    font-size: 38px;
+  }
+}
+
+@utility t-quote {
+  font-size: 23px;
+  line-height: 1.35;
+  font-weight: var(--font-weight-lead);
+
+  @media (width >= 810px) {
+    font-size: 26px;
+  }
+
+  @media (width >= 1300px) {
+    font-size: 30px;
+  }
+}
+
+@utility t-lead {
+  font-size: 22px;
+  line-height: 1.4;
+  font-weight: var(--font-weight-lead);
+
+  @media (width >= 810px) {
+    font-size: 24px;
+  }
+
+  @media (width >= 1300px) {
+    font-size: 26px;
+  }
+}
+
+@utility t-intro {
+  font-size: 20px;
+  line-height: 1.45;
+  font-weight: var(--font-weight-lead);
+
+  @media (width >= 810px) {
+    font-size: 22px;
+  }
+
+  @media (width >= 1300px) {
+    font-size: 24px;
+  }
+}
+
+@utility t-post {
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  font-weight: var(--font-weight-medium);
+
+  @media (width >= 810px) {
+    font-size: 24px;
+  }
+
+  @media (width >= 1300px) {
+    font-size: 25px;
+  }
+}
+
+@utility t-card {
+  font-size: 22px;
+  line-height: 1.275;
+  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-medium);
+}
+
+@utility t-name {
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-medium);
+}
+
+@utility t-body {
+  font-size: 18px;
+  line-height: 1.55;
+  font-weight: var(--font-weight-body);
+}
+
+@utility t-nav {
+  font-size: 18px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-nav);
+}
+
+@utility t-menu {
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-nav);
+}
+
+@utility t-button {
+  font-size: 17px;
+  line-height: 1.175;
+  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-medium);
+}
+
+@utility t-sticker {
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-medium);
+}
+
+@utility t-meta {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: var(--font-weight-meta);
+  text-transform: uppercase;
+}
+
+@utility t-numeral {
+  font-family: var(--font-numeral);
+  font-size: 54px;
+  line-height: 1;
+  font-weight: var(--font-weight-semibold);
+  -webkit-text-stroke: 1px var(--color-ink);
+}
+
+@utility t-hand {
+  font-family: var(--font-hand);
+  font-size: 21px;
+  line-height: 0.9;
+
+  @media (width >= 810px) {
+    font-size: 24px;
+  }
+}
+
+@utility hairline-top {
+  border-top: 1px solid var(--color-ink);
+}
+
+@keyframes badge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-badge-spin {
+  animation: badge-spin 15s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
