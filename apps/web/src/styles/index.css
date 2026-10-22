@@ -81,6 +81,35 @@
   strong {
     font-weight: var(--font-weight-medium);
   }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  summary,
+  input[type="radio"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  label:has(> input[type="radio"]:not(:disabled)),
+  label:has(> input[type="checkbox"]:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+@utility press {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 500ms;
+  transition-timing-function: var(--ease-settle);
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: inset 0 -2px 0 0 rgb(29 29 29 / 0.15);
+  }
 }
 
 @utility shell {

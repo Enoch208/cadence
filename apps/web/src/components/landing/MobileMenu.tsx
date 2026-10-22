@@ -19,7 +19,7 @@ export function MenuToggle({ open, onToggle }: MenuToggleProps) {
       aria-controls="mobile-menu"
       aria-label={open ? "Close menu" : "Open menu"}
       onClick={onToggle}
-      className="relative size-[38px] rounded-btn border border-ink bg-paper shadow-key-sm transition-colors duration-700 hover:bg-hover lg:hidden"
+      className="press relative size-[38px] rounded-btn border border-ink bg-paper shadow-key-sm hover:bg-hover lg:hidden"
     >
       <span className={`${bar} ${open ? "top-[17px] rotate-45" : "top-[13px]"}`} />
       <span className={`${bar} ${open ? "top-[17px] -rotate-45" : "top-[22px]"}`} />

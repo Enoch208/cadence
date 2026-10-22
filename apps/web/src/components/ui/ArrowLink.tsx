@@ -13,7 +13,7 @@ export function ArrowLink({ href, label, tone }: ArrowLinkProps) {
     <a
       href={href}
       aria-label={label}
-      className={`flex h-10 w-[52px] items-center justify-center rounded-pill border border-ink text-ink transition-colors duration-700 ease-settle ${pressableFill[tone]}`}
+      className={`flex h-10 w-[52px] items-center justify-center rounded-pill border border-ink text-ink transition duration-700 ease-settle active:translate-y-px ${pressableFill[tone]}`}
     >
       <HugeiconsIcon icon={ArrowRight02Icon} size={18} strokeWidth={1.5} />
     </a>

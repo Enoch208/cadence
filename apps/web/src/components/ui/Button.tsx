@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { RollText } from "./RollText";
 
 const surface =
-  "group inline-flex h-[54px] items-center justify-center overflow-clip rounded-btn border border-ink bg-paper px-[25px] pb-[3px] text-ink shadow-key transition-colors duration-500 ease-settle hover:bg-hover";
+  "group press inline-flex h-[54px] items-center justify-center overflow-clip rounded-btn border border-ink bg-paper px-[25px] pb-[3px] text-ink shadow-key hover:bg-hover";
 
 type ButtonProps = {
   href: string;
@@ -49,7 +49,7 @@ export function ActionButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`${surface} t-button disabled:cursor-not-allowed disabled:bg-hover`}
+      className={`${surface} t-button disabled:bg-hover disabled:opacity-60`}
     >
       {children}
     </button>

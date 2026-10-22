@@ -103,7 +103,7 @@ export function MobileAppBar() {
           onClick={() => {
             setOpen((value) => !value);
           }}
-          className="h-[38px] rounded-btn border border-ink bg-paper px-3.5 t-button shadow-key-sm"
+          className="press h-[38px] rounded-btn border border-ink bg-paper px-3.5 t-button shadow-key-sm hover:bg-hover"
         >
           {open ? "Close" : "Menu"}
         </button>
