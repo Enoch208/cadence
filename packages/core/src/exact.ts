@@ -1,0 +1,8 @@
+import { Decimal } from "decimal.js";
+
+export const Exact = Decimal.clone({
+  precision: 256,
+  rounding: Decimal.ROUND_DOWN,
+  toExpNeg: -9e15,
+  toExpPos: 9e15,
+});
