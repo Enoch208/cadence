@@ -9,3 +9,4 @@ export * from "./public-client";
 export * from "./replay-scenarios";
 export * from "./replay-client";
 export * from "./credentials";
+export * from "./snapshot";
