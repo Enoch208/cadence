@@ -10,6 +10,7 @@ import { authRoutes } from "./routes/auth";
 import { eventRoutes } from "./routes/events";
 import { intentRoutes } from "./routes/intents";
 import { communityRoutes } from "./routes/communities";
+import { draftingRoutes } from "./routes/drafting";
 import { planRoutes } from "./routes/plans";
 import { policyRoutes } from "./routes/policies";
 import { previewRoutes } from "./routes/previews";
@@ -26,6 +27,7 @@ export function createApp(deps: AppDeps) {
     .route("/api", authRoutes(deps))
     .route("/api", communityRoutes(deps))
     .route("/api", planRoutes(deps))
+    .route("/api", draftingRoutes(deps))
     .route("/api", accountRoutes(deps))
     .route("/api", policyRoutes(deps))
     .route("/api", previewRoutes(deps))

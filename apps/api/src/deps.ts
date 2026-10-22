@@ -1,5 +1,6 @@
 import type { AccountConnectionRow, Db } from "@cadence/db";
 import type { Signer, StrikeClient, StrikePublicClient } from "@cadence/strike";
+import type { PlanDrafter } from "./drafting/contract";
 import type { ApiEnv } from "./env";
 import type { TelegramPublisher } from "./telegram/publisher";
 
@@ -14,6 +15,7 @@ export type AppDeps = {
   env: ApiEnv;
   strike: StrikeClientFactory;
   telegram: TelegramPublisher;
+  drafter: PlanDrafter | null;
   now: () => number;
 };
 

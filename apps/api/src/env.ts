@@ -24,6 +24,10 @@ export const apiEnvSchema = z.object({
     .default("https://api.strikefinance.org")
     .transform((value) => value.replace(/\/+$/, "")),
   CADENCE_LIVE_MAX_NOTIONAL: positiveDecimalSchema,
+  ANTHROPIC_API_KEY: z
+    .string()
+    .regex(/^sk-ant-[\w-]{20,}$/)
+    .optional(),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

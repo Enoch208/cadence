@@ -11,7 +11,9 @@ import { describeFailure, HttpError, unprocessable } from "../http/errors";
 
 const pricedFields = ["entryMin", "entryMax", "stopPrice", "targetPrice"] as const;
 
-async function strikeMarkets(deps: Pick<AppDeps, "strike">): Promise<readonly MarketRules[]> {
+export async function strikeMarkets(
+  deps: Pick<AppDeps, "strike">,
+): Promise<readonly MarketRules[]> {
   try {
     return await deps.strike.public().markets();
   } catch (error) {

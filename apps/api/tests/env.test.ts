@@ -77,6 +77,15 @@ describe("API environment", () => {
     );
   });
 
+  it("leaves drafting off without an Anthropic key and refuses a malformed one", () => {
+    expect(loadApiEnv({ ...complete, ANTHROPIC_API_KEY: "" }).ANTHROPIC_API_KEY).toBeUndefined();
+    const key = `sk-ant-api03-${"a".repeat(40)}`;
+    expect(loadApiEnv({ ...complete, ANTHROPIC_API_KEY: key }).ANTHROPIC_API_KEY).toBe(key);
+    const message = failure({ ...complete, ANTHROPIC_API_KEY: "not-an-anthropic-key-at-all" });
+    expect(message).toContain("Invalid: ANTHROPIC_API_KEY");
+    expect(message).not.toContain("not-an-anthropic-key-at-all");
+  });
+
   it("refuses a Strike base that is not https", () => {
     expect(failure({ ...complete, STRIKE_API_BASE: "http://api.strikefinance.org" })).toContain(
       "Invalid: STRIKE_API_BASE",

@@ -59,6 +59,7 @@ export function cadenceApi(clock: TestClock): CadenceApi {
         return Promise.resolve({ messageId: cards.length });
       },
     },
+    drafter: null,
     now: clock.now,
   });
 }
