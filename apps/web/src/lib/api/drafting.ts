@@ -26,11 +26,12 @@ export const planDraftSchema = z.object({
 export type PlanDraftReply = z.infer<typeof planDraftSchema>;
 
 export function modelName(model: string): string {
-  const match = /^claude-([a-z]+)-(\d+)(?:-(\d+))?$/.exec(model);
+  const match = /^gpt-(\d+(?:\.\d+)?)(?:-([a-z]+))?(?:-\d{4}-\d{2}-\d{2})?$/.exec(model);
   if (match === null) {
     return model;
   }
-  const [, family = "", major = "", minor] = match;
-  const version = minor === undefined ? major : `${major}.${minor}`;
-  return `Claude ${family.charAt(0).toUpperCase()}${family.slice(1)} ${version}`;
+  const [, version = "", tier] = match;
+  return tier === undefined
+    ? `GPT-${version}`
+    : `GPT-${version} ${tier.charAt(0).toUpperCase()}${tier.slice(1)}`;
 }

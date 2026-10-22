@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ActionButton } from "@/components/ui/Button";
 import { apiRequest } from "@/lib/api/client";
@@ -69,16 +69,24 @@ const without = (sources: Sources, key: FormKey): Sources =>
 type Drafted = { missing: FormKey[]; model: string };
 
 function DraftSummary({ drafted }: { drafted: Drafted }) {
+  const summary = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    summary.current?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+    summary.current?.focus({ preventScroll: true });
+  }, [drafted]);
   const complete = drafted.missing.length === 0;
-  const notStated = drafted.missing.map((key) => fieldNames[key]).join(", ");
+  const leftOver = drafted.missing.map((key) => fieldNames[key]).join(", ");
   return (
     <p
+      ref={summary}
+      tabIndex={-1}
       role="status"
-      className={`t-body rounded-card border border-ink p-4 ${complete ? "bg-mint" : "bg-butter"}`}
+      className={`t-body rounded-card border border-ink p-4 outline-none ${complete ? "bg-mint" : "bg-butter"}`}
     >
       {modelName(drafted.model)} filled {draftedKeys.length - drafted.missing.length} of{" "}
-      {draftedKeys.length} fields from your message.{" "}
-      {complete ? "" : `Not in your message: ${notStated}. `}Check every value before you publish.
+      {draftedKeys.length} fields from your message. {complete ? "" : `Left for you: ${leftOver}. `}
+      Check every value before you publish.
     </p>
   );
 }

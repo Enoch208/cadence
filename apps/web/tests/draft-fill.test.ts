@@ -18,7 +18,7 @@ const empty: PlanDraft = {
 };
 
 const reply = planDraftSchema.parse({
-  model: "claude-opus-5-5",
+  model: "gpt-6.1-sol",
   draft: {
     filled: {
       market: { value: "ETH-USD", quote: "ETH short" },
@@ -92,9 +92,10 @@ describe("filling the plan form from a drafted message", () => {
 
 describe("naming the model that read the message", () => {
   it.each([
-    ["claude-opus-5-5", "Claude Opus 5.5"],
-    ["claude-opus-4-8", "Claude Opus 4.8"],
-    ["claude-sonnet-5", "Claude Sonnet 5"],
+    ["gpt-6.1-sol", "GPT-6.1 Sol"],
+    ["gpt-6.1-sol-2026-10-01", "GPT-6.1 Sol"],
+    ["gpt-6-luna", "GPT-6 Luna"],
+    ["gpt-5.5", "GPT-5.5"],
     ["some-other-model", "some-other-model"],
   ])("names %s as %s", (model, name) => {
     expect(modelName(model)).toBe(name);
