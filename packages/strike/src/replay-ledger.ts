@@ -31,7 +31,6 @@ export function createReplayLedger(args: {
   startingBalance: DecimalString;
   takerRate: DecimalString;
   now: () => number;
-  nextId: () => string;
 }) {
   const fills: ExchangeFill[] = [];
   let position: ReplayPosition | null = null;
@@ -83,7 +82,7 @@ export function createReplayLedger(args: {
     order.status = "filled";
     order.filled = size;
     fills.push({
-      fillId: args.nextId(),
+      fillId: `${order.orderId}-fill-${String(fills.filter((existing) => existing.orderId === order.orderId).length + 1)}`,
       orderId: order.orderId,
       clientOrderId: order.clientOrderId,
       symbol: order.symbol,

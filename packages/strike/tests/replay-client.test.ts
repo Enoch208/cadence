@@ -295,3 +295,30 @@ describe("symbol settings", () => {
     ).rejects.toBeInstanceOf(StrikeRejectedError);
   });
 });
+
+describe("replay order identities", () => {
+  it("never repeats an order or fill ID across separate replay exchanges", async () => {
+    const first = replay();
+    const second = replay();
+    await first.client.placeStrategy(entry("intent-one"));
+    await second.client.placeStrategy(entry("intent-two"));
+    const ids = [
+      ...(await first.client.openOrders(null)).map((order) => order.orderId),
+      ...(await second.client.openOrders(null)).map((order) => order.orderId),
+      ...(await first.client.fills("BTC-USD", 0)).map((fill) => fill.fillId),
+      ...(await second.client.fills("BTC-USD", 0)).map((fill) => fill.fillId),
+    ];
+    expect(ids.length).toBeGreaterThan(4);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("gives the same order the same ID in a restarted replay exchange", async () => {
+    const before = replay();
+    const after = replay();
+    await before.client.placeStrategy(entry("intent-one"));
+    await after.client.placeStrategy(entry("intent-one"));
+    expect(await after.client.order("BTC-USD", "cad-intent-one-e")).toMatchObject({
+      orderId: (await before.client.order("BTC-USD", "cad-intent-one-e"))?.orderId,
+    });
+  });
+});

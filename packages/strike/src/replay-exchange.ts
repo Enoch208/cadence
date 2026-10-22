@@ -23,14 +23,11 @@ export function createReplayExchange(scenario: ReplayScenario, now: () => number
   const accountId = `replay:${scenario.name}`;
   const orders: ExchangeOrderSnapshot[] = [];
   const submitted: StrategyOrder[] = [];
-  let sequence = 0;
   let leverage = scenario.leverage;
-  const nextId = () => String(1_000_000 + (sequence += 1));
   const ledger = createReplayLedger({
     startingBalance: scenario.availableBalance,
     takerRate: capturedTierZeroFees.takerRate,
     now,
-    nextId,
   });
   const isLive = (order: ExchangeOrderSnapshot) => liveStatuses.includes(order.status);
   const mark = () => replayMark(scenario, now() - scenario.marketDataAgeMs);
@@ -38,7 +35,7 @@ export function createReplayExchange(scenario: ReplayScenario, now: () => number
     new StrikeRejectedError({ operation, status: 400, code: null, message });
 
   function record(fields: OrderFields): ExchangeOrderSnapshot {
-    const order = { orderId: nextId(), symbol: market.symbol, ...fields };
+    const order = { orderId: `replay-${fields.clientOrderId}`, symbol: market.symbol, ...fields };
     orders.push(order);
     return order;
   }
