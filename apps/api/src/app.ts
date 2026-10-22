@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { except } from "hono/combine";
 import { HTTPException } from "hono/http-exception";
 import { requireSameOrigin } from "./auth/middleware";
 import type { AppDeps, AppEnv } from "./deps";
@@ -15,11 +16,18 @@ import { planRoutes } from "./routes/plans";
 import { policyRoutes } from "./routes/policies";
 import { previewRoutes } from "./routes/previews";
 import { statsRoutes } from "./routes/stats";
+import { telegramRoutes, telegramWebhookPath } from "./routes/telegram";
 
 export function createApp(deps: AppDeps) {
   return new Hono<AppEnv>()
     .use("/api/*", limitBodySize)
-    .use("/api/*", requireSameOrigin(deps.env.PUBLIC_WEB_ORIGIN))
+    .use(
+      "/api/*",
+      except(
+        (c) => c.req.method === "POST" && c.req.path === telegramWebhookPath,
+        requireSameOrigin(deps.env.PUBLIC_WEB_ORIGIN),
+      ),
+    )
     .get("/api/health", async (c) => {
       await deps.db.execute(sql`select 1`);
       return c.json({ status: "ok" });
@@ -34,6 +42,7 @@ export function createApp(deps: AppDeps) {
     .route("/api", intentRoutes(deps))
     .route("/api", eventRoutes(deps))
     .route("/api", statsRoutes(deps))
+    .route("/api", telegramRoutes(deps))
     .notFound((c) =>
       c.json({ code: "NOT_FOUND", message: "There is nothing at this address." }, 404),
     )
