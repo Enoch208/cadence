@@ -87,3 +87,19 @@ describe("plain-language copy", () => {
     );
   });
 });
+
+describe("the words members read in Telegram", () => {
+  it("match the app's words for every state in both environments", async () => {
+    const telegram = await import("../../worker/src/notify-words");
+    for (const state of intentStates) {
+      for (const environment of environments) {
+        expect(telegram.intentStateLabel(state, environment)).toBe(
+          intentStateLabel(state, environment),
+        );
+        expect(telegram.intentStateDetail(state, environment)).toBe(
+          intentStateDetail(state, environment),
+        );
+      }
+    }
+  });
+});
