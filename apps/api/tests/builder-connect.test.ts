@@ -69,6 +69,7 @@ describe("connecting a Strike account with one wallet signature", () => {
         builderCode: testBuilderCode,
         feeBps: 0,
         chains: ["ethereum", "solana", "cardano"],
+        liveMaxNotional: "25",
       },
     });
   });

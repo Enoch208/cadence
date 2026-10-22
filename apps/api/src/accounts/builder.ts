@@ -71,6 +71,7 @@ export const builderAvailability = (deps: AppDeps) => ({
   builderCode: deps.builderConnect?.builderCode ?? null,
   feeBps: builderFeeShareBps,
   chains: walletChains,
+  liveMaxNotional: deps.env.CADENCE_LIVE_MAX_NOTIONAL,
 });
 
 function logged(error: StrikeRejectedError): StrikeRejectedError {
