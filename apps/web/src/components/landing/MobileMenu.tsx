@@ -46,6 +46,9 @@ export function MobileMenu({ onNavigate }: MobileMenuProps) {
           </li>
         ))}
       </ul>
+      <a href="/app" className="t-menu block">
+        Open the app
+      </a>
       <div className="flex gap-2.5">
         <KeyLink href={links.repository} label="Cadence on GitHub" icon={GithubIcon} />
         <KeyLink href={links.x} label="Cadence on X" icon={NewTwitterIcon} />

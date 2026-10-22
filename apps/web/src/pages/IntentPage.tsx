@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { terminalIntentStates, type IntentState } from "@cadence/core";
 import { AppShell, Panel } from "@/components/app/AppShell";
 import { EnvironmentBadge } from "@/components/app/EnvironmentBadge";
@@ -83,6 +83,11 @@ function IntentDetail({ intentId }: { intentId: string }) {
       <Panel>
         <h2 className="t-card">On Strike</h2>
         <OrdersPanel orders={intent.orders} />
+        {settled.has(intent.state) ? (
+          <Link to={`/receipts/${intent.id}`} className="t-body underline underline-offset-4">
+            View the receipt
+          </Link>
+        ) : null}
       </Panel>
     </>
   );

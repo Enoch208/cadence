@@ -17,6 +17,12 @@ const AuthorPage = lazy(() =>
 const AccountPage = lazy(() =>
   import("@/pages/AccountPage").then((module) => ({ default: module.AccountPage })),
 );
+const DashboardPage = lazy(() =>
+  import("@/pages/DashboardPage").then((module) => ({ default: module.DashboardPage })),
+);
+const ReceiptPage = lazy(() =>
+  import("@/pages/ReceiptPage").then((module) => ({ default: module.ReceiptPage })),
+);
 const NotFoundPage = lazy(() =>
   import("@/pages/NotFoundPage").then((module) => ({ default: module.NotFoundPage })),
 );
@@ -29,6 +35,8 @@ export function App() {
         <Route path="/p/:publicId" element={<PlanPage />} />
         <Route path="/p/:publicId/preview" element={<PreviewPage />} />
         <Route path="/intents/:intentId" element={<IntentPage />} />
+        <Route path="/app" element={<DashboardPage />} />
+        <Route path="/receipts/:intentId" element={<ReceiptPage />} />
         <Route path="/author" element={<AuthorPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="*" element={<NotFoundPage />} />

@@ -52,7 +52,13 @@ export function Navbar() {
             </li>
           ))}
         </ul>
-        <div className="hidden flex-1 justify-end gap-2.5 lg:flex">
+        <div className="hidden flex-1 items-center justify-end gap-2.5 lg:flex">
+          <a
+            href="/app"
+            className="group mr-1.5 inline-flex h-[38px] items-center rounded-btn border border-ink bg-paper px-3.5 pb-px shadow-key-sm transition-colors duration-700 ease-settle hover:bg-hover"
+          >
+            <RollText className="t-button">Open the app</RollText>
+          </a>
           <KeyLink href={links.repository} label="Cadence on GitHub" icon={GithubIcon} />
           <KeyLink href={links.x} label="Cadence on X" icon={NewTwitterIcon} />
         </div>

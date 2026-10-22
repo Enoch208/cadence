@@ -8,9 +8,11 @@ import {
   orderRoles,
   planFieldsSchema,
   reasonCodes,
+  directions,
   type Decision,
   type DecisionEvidence,
   type Proposal,
+  type Receipt,
 } from "@cadence/core";
 
 const decimal = decimalStringSchema;
@@ -135,3 +137,59 @@ export const publishedPlanVersionSchema = z.object({
 });
 
 export const policyVersionSchema = z.object({ version: z.number().int().positive() });
+
+export const intentSummarySchema = z.object({
+  id: z.string(),
+  state: z.enum(intentStates),
+  environment: z.enum(environments),
+  market: z.string(),
+  direction: z.enum(directions),
+  planPublicId: z.string(),
+  planVersion: z.number().int().positive(),
+  quantity: decimal,
+  limitPrice: decimal,
+  plannedLoss: decimal,
+  createdAt: z.number(),
+  updatedAt: z.number(),
+  receiptReady: z.boolean(),
+});
+export type IntentSummary = z.infer<typeof intentSummarySchema>;
+
+export const intentListSchema = z.object({ intents: z.array(intentSummarySchema) });
+
+export const authoredPlanSchema = z.object({
+  id: z.string(),
+  publicId: z.string(),
+  status: z.enum(["draft", "published", "revoked"]),
+  environment: z.enum(environments),
+  market: z.string(),
+  direction: z.enum(directions),
+  currentVersion: z.number().int().positive().nullable(),
+  entryExpiresAt: z.string().nullable(),
+  communityName: z.string(),
+});
+export type AuthoredPlan = z.infer<typeof authoredPlanSchema>;
+
+export const authoredPlansSchema = z.object({ plans: z.array(authoredPlanSchema) });
+
+const filledLeg = z.object({ size: decimal, averagePrice: decimal });
+
+const receiptSchema: z.ZodType<Receipt> = z.object({
+  intentId: z.string(),
+  planPublicId: z.string(),
+  planVersion: z.number().int().positive(),
+  planDigest: z.string(),
+  policyVersion: z.number().int().positive(),
+  approved: proposalSchema.nullable(),
+  state: z.enum(intentStates),
+  entry: filledLeg.nullable(),
+  exit: filledLeg.nullable(),
+  feesPaid: decimal,
+  realizedPnl: decimal.nullable(),
+  exchangeOrderIds: z.array(z.string()),
+  incomplete: z.array(z.string()),
+  reconciledAt: z.number(),
+});
+
+export const receiptResponseSchema = z.object({ receipt: receiptSchema, builtAt: z.number() });
+export type ReceiptResponse = z.infer<typeof receiptResponseSchema>;
