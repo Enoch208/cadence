@@ -167,6 +167,12 @@ export const authoredPlanSchema = z.object({
   currentVersion: z.number().int().positive().nullable(),
   entryExpiresAt: z.string().nullable(),
   communityName: z.string(),
+  funnel: z.object({
+    previewed: z.number().int().nonnegative(),
+    couldTake: z.number().int().nonnegative(),
+    approved: z.number().int().nonnegative(),
+    filled: z.number().int().nonnegative(),
+  }),
 });
 export type AuthoredPlan = z.infer<typeof authoredPlanSchema>;
 

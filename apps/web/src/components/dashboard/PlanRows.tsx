@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { EnvironmentBadge } from "@/components/app/EnvironmentBadge";
 import type { AuthoredPlan } from "@/lib/api/schemas";
 import { formatInstant } from "@/lib/format";
+import { funnelLine } from "@/lib/funnel";
 
 function standing(plan: AuthoredPlan, now: number): string {
   if (plan.status === "draft") {
@@ -35,6 +36,9 @@ export function PlanRows({ plans, now }: { plans: readonly AuthoredPlan[]; now: 
                   : `Version ${String(plan.currentVersion)}`}{" "}
                 · {standing(plan, now)}
               </span>
+              {plan.status === "draft" ? null : (
+                <span className="t-body tabular-nums">{funnelLine(plan)}</span>
+              )}
             </span>
             <span className="flex items-center gap-3">
               <EnvironmentBadge environment={plan.environment} />

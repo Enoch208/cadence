@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { communities, planVersions, plans, type Executor } from "@cadence/db";
 import { listLimit } from "../intents/list";
+import { planFunnels, quietFunnel } from "./funnel";
 
 export async function listAuthoredPlans(db: Executor, userId: string) {
   const rows = await db
@@ -14,6 +15,10 @@ export async function listAuthoredPlans(db: Executor, userId: string) {
     .where(eq(plans.authorUserId, userId))
     .orderBy(desc(plans.createdAt), desc(plans.id))
     .limit(listLimit);
+  const funnels = await planFunnels(
+    db,
+    rows.map(({ plan }) => plan.id),
+  );
   return rows.map(({ plan, communityName, current }) => {
     const terms = current ?? plan.draft;
     return {
@@ -26,6 +31,7 @@ export async function listAuthoredPlans(db: Executor, userId: string) {
       currentVersion: plan.currentVersion === 0 ? null : plan.currentVersion,
       entryExpiresAt: terms.entryExpiresAt,
       communityName,
+      funnel: funnels.get(plan.id) ?? quietFunnel,
     };
   });
 }
