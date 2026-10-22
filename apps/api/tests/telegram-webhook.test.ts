@@ -142,6 +142,41 @@ describe("POST /api/telegram/webhook", () => {
     expect(await botStartedAt(bot.id)).toBe("no user");
   });
 
+  it("tells a group its ID when the bot joins it, and asks to be made admin until it is", async () => {
+    const { app } = testApp();
+    const group = { id: -1001234567890, type: "supergroup", title: "Range Traders" };
+    const joined = (status: string, chat: object = group) => ({
+      ...memberStatusUpdate(status),
+      my_chat_member: { ...memberStatusUpdate(status).my_chat_member, chat },
+    });
+    expect(await deliver(app, joined("member"))).toEqual({
+      status: 200,
+      body: {
+        method: "sendMessage",
+        chat_id: group.id,
+        text: "Make me an admin of this group so I can post plan cards. Then open Publish a plan in Cadence and enter this group ID: -1001234567890",
+        link_preview_options: { is_disabled: true },
+      },
+    });
+    expect(await deliver(app, joined("administrator"))).toEqual({
+      status: 200,
+      body: {
+        method: "sendMessage",
+        chat_id: group.id,
+        text: "Cadence can post plan cards here. To publish to this group, open Publish a plan in Cadence and enter this group ID: -1001234567890",
+        link_preview_options: { is_disabled: true },
+      },
+    });
+    for (const update of [
+      joined("left"),
+      joined("kicked"),
+      joined("administrator", { id: -42, type: "channel", title: "Signals" }),
+    ]) {
+      expect(await deliver(app, update)).toEqual({ status: 204, body: null });
+    }
+    expect(await botStartedAt(member.id)).toBe("no user");
+  });
+
   it("forgets the start when the member blocks the bot, and records it again on /start", async () => {
     const { app } = testApp();
     await deliver(app, textUpdate("/start"));

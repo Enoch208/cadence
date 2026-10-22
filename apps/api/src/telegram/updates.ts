@@ -5,6 +5,7 @@ export type BotTurn =
   | { kind: "start"; chatId: number; identity: TelegramIdentity }
   | { kind: "message"; chatId: number }
   | { kind: "stopped"; telegramUserId: number }
+  | { kind: "joinedGroup"; chatId: number; admin: boolean }
   | { kind: "ignored" };
 
 const optionalName = z
@@ -36,6 +37,21 @@ type Sender = z.infer<typeof sender>;
 
 const startCommand = /^\/start(?:@\w+)?(?:\s|$)/;
 
+const groupTypes = new Set(["group", "supergroup"]);
+const presentStatuses = new Set(["member", "administrator"]);
+
+function membershipTurn(membership: NonNullable<Update["my_chat_member"]>): BotTurn {
+  const { chat: where, new_chat_member: next } = membership;
+  if (where.type === "private") {
+    return next.status === "kicked"
+      ? { kind: "stopped", telegramUserId: membership.from.id }
+      : { kind: "ignored" };
+  }
+  return groupTypes.has(where.type) && presentStatuses.has(next.status)
+    ? { kind: "joinedGroup", chatId: where.id, admin: next.status === "administrator" }
+    : { kind: "ignored" };
+}
+
 const identityOf = (from: Sender): TelegramIdentity => ({
   telegramUserId: from.id,
   firstName: from.first_name,
@@ -46,9 +62,7 @@ const identityOf = (from: Sender): TelegramIdentity => ({
 function turnOf(update: Update): BotTurn {
   const { message, my_chat_member: membership } = update;
   if (membership !== undefined) {
-    const stopped =
-      membership.chat.type === "private" && membership.new_chat_member.status === "kicked";
-    return stopped ? { kind: "stopped", telegramUserId: membership.from.id } : { kind: "ignored" };
+    return membershipTurn(membership);
   }
   if (message?.from === undefined || message.from.is_bot || message.chat.type !== "private") {
     return { kind: "ignored" };

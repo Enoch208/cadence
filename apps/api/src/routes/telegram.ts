@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { AppDeps, AppEnv } from "../deps";
 import { HttpError } from "../http/errors";
 import { recordBotStart, recordBotStop } from "../telegram/bot-starts";
-import { replyCopy, webhookReply } from "../telegram/replies";
+import { groupReply, groupWelcome, replyCopy, webhookReply } from "../telegram/replies";
 import { readTurn, type BotTurn } from "../telegram/updates";
 import { isWebhookSecret } from "../telegram/webhook-secret";
 
@@ -19,6 +19,8 @@ async function answer(deps: AppDeps, turn: BotTurn) {
       return webhookReply(turn.chatId, replyCopy.started, appUrl);
     case "message":
       return webhookReply(turn.chatId, replyCopy.pointer, appUrl);
+    case "joinedGroup":
+      return groupReply(turn.chatId, groupWelcome(turn.chatId, turn.admin));
     case "stopped":
       await recordBotStop(deps.db, turn.telegramUserId);
       return null;
