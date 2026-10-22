@@ -152,6 +152,9 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
+      '@cadence/api':
+        specifier: workspace:*
+        version: link:../api
       tsx:
         specifier: 4.23.15
         version: 4.23.15
@@ -173,6 +176,9 @@ importers:
       '@cadence/core':
         specifier: workspace:*
         version: link:../core
+      '@cadence/strike':
+        specifier: workspace:*
+        version: link:../strike
       drizzle-orm:
         specifier: 0.45.4
         version: 0.45.4(postgres@3.4.9)
