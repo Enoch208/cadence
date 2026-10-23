@@ -70,6 +70,7 @@ export function minimumProbeOrder(args: {
     limitPrice: ask,
     stopPrice: floorToGrid(multiplyDecimal(ask, "0.99"), market.minPrice, market.tickSize),
     targetPrice: ceilToGrid(multiplyDecimal(ask, "1.01"), market.minPrice, market.tickSize),
+    builderFeeBps: null,
   };
   return { order, notional };
 }

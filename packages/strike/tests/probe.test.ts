@@ -101,6 +101,7 @@ describe("minimumProbeOrder", () => {
       limitPrice: "84482",
       stopPrice: "83637",
       targetPrice: "85327",
+      builderFeeBps: null,
     });
     expect(probe.notional).toBe("10.13784");
   });

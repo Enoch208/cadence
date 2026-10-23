@@ -6,7 +6,7 @@ import { StrikeAmbiguousError } from "./errors";
 import { createAccountReads } from "./live-account";
 import { readShaped, shaped, signedRead, signedWrite } from "./live-requests";
 import { toOrderAck, toStrategyAck, toSymbolSettings } from "./normalize";
-import { reduceOnlyCloseBody, strategyRequestBody } from "./orders";
+import { builderFeeHeaderBps, reduceOnlyCloseBody, strategyRequestBody } from "./orders";
 import { createPublicReads, readServerTime } from "./public-reads";
 import type { Signer } from "./signer";
 import { createTransport, type Authenticate, type TransportRequest } from "./transport";
@@ -105,7 +105,9 @@ export function createLiveStrikeClient(args: LiveStrikeClientArgs): StrikeClient
     ...createAccountReads(transport),
     placeStrategy: async (order): Promise<StrategyAck> => {
       const body = strategyRequestBody(order);
-      const request = signedWrite("placeStrategy", "POST", "/v2/order/strategy", body);
+      const signed = signedWrite("placeStrategy", "POST", "/v2/order/strategy", body);
+      const feeBps = builderFeeHeaderBps(order.builderFeeBps);
+      const request = feeBps === null ? signed : { ...signed, builderFeeBps: feeBps };
       const ack = await write(request, toStrategyAck);
       if (
         ack.strategyId !== order.strategyId ||

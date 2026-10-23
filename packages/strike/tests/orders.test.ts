@@ -56,7 +56,21 @@ describe("toStrategyOrder", () => {
       limitPrice: "84268",
       stopPrice: "83200",
       targetPrice: "86800",
+      builderFeeBps: null,
     });
+  });
+
+  it("carries the approved curator fee rate for the fee header, and none without one", () => {
+    const curatorFee = { builderCode: "range_traders", feeBps: 5 };
+    const charged = toStrategyOrder({
+      intentId,
+      plan: { ...longPlan, curatorFee },
+      proposal: { ...proposal, curatorFee },
+    });
+    expect(charged.builderFeeBps).toBe(5);
+    expect(strategyRequestBody(charged)).toEqual(strategyRequestBody(longOrder));
+    const unapproved = toStrategyOrder({ intentId, plan: { ...longPlan, curatorFee }, proposal });
+    expect(unapproved.builderFeeBps).toBeNull();
   });
 
   it("sells to enter a short", () => {

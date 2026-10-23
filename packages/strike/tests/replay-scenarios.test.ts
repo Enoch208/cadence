@@ -70,6 +70,7 @@ describe("the replay client cannot reach Strike", () => {
         limitPrice: "84218",
         stopPrice: "83200",
         targetPrice: "86800",
+        builderFeeBps: 5,
       });
       await client.order("BTC-USD", "cad-x-e");
       await client.openOrders(null);

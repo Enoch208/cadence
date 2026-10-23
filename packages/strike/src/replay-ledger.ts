@@ -1,4 +1,5 @@
 import {
+  curatorFeeCharge,
   initialMargin,
   type DecimalString,
   type ExchangeFill,
@@ -36,6 +37,7 @@ export function createReplayLedger(args: {
   let position: ReplayPosition | null = null;
   let realized = "0";
   let feesPaid = "0";
+  let builderFeesPaid = "0";
 
   function reduce(
     open: ReplayPosition,
@@ -76,9 +78,11 @@ export function createReplayLedger(args: {
     price: DecimalString,
     size: DecimalString,
     leverage: number,
+    builderFeeBps: number,
   ): { positionClosed: boolean } {
     const fee = multiplyDecimal(multiplyDecimal(price, size), args.takerRate);
     feesPaid = addDecimal(feesPaid, fee);
+    builderFeesPaid = addDecimal(builderFeesPaid, curatorFeeCharge(price, size, builderFeeBps));
     order.status = "filled";
     order.filled = size;
     fills.push({
@@ -111,8 +115,9 @@ export function createReplayLedger(args: {
             multiplyDecimal(absDecimal(position.signedSize), position.entryPrice),
             position.leverage,
           );
+    const charged = addDecimal(feesPaid, builderFeesPaid);
     return subtractDecimal(
-      subtractDecimal(addDecimal(args.startingBalance, realized), feesPaid),
+      subtractDecimal(addDecimal(args.startingBalance, realized), charged),
       margin,
     );
   }
@@ -121,6 +126,7 @@ export function createReplayLedger(args: {
     fill,
     availableBalance,
     position: (): ReplayPosition | null => position,
+    builderFeesPaid: (): DecimalString => builderFeesPaid,
     fills: (symbol: string, sinceMs: number) =>
       fills
         .filter((entry) => entry.symbol === symbol && entry.filledAt >= sinceMs)

@@ -25,9 +25,22 @@ const withoutFeeTerms = (decision: Decision): Decision =>
 
 describe("the curator fee at the final check", () => {
   it("sends an approval whose curator fee still applies on the same terms", async () => {
-    const { intent, deps } = await approved({ spec: underCuratorCode, plan: feePlan });
+    const { intent, deps, replay } = await approved({ spec: underCuratorCode, plan: feePlan });
     expect(intent.approved.curatorFee).toEqual(curatorFee);
     await expect(submitIntent(deps, intent.id)).resolves.toBe("acknowledged");
+    expect(replay.submittedStrategies().map((order) => order.builderFeeBps)).toEqual([5]);
+    expect(replay.builderFeesPaid()).not.toBe("0");
+  });
+
+  it("sends the same plan without the fee header from an account under another code", async () => {
+    const { intent, deps, replay } = await approved({
+      spec: { environment: "replay", scenario: "happy_path" },
+      plan: feePlan,
+    });
+    expect(intent.approved.curatorFee).toBeNull();
+    await expect(submitIntent(deps, intent.id)).resolves.toBe("acknowledged");
+    expect(replay.submittedStrategies().map((order) => order.builderFeeBps)).toEqual([null]);
+    expect(replay.builderFeesPaid()).toBe("0");
   });
 
   it("refuses to send when the member approved no fee but the account now pays one", async () => {

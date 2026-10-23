@@ -16,6 +16,7 @@ export type TransportRequest = {
   query?: readonly (readonly [string, string])[];
   body?: Readonly<Record<string, unknown>>;
   signed?: boolean;
+  builderFeeBps?: number;
 };
 
 export type TransportReply = { body: unknown; sentAt: number; receivedAt: number };
@@ -155,6 +156,9 @@ export function createTransport(args: TransportArgs): Transport {
         headers,
         await args.authenticate({ method: request.method, pathWithQuery, body }),
       );
+    }
+    if (request.builderFeeBps !== undefined) {
+      headers["X-Builder-Fee-Bps"] = String(request.builderFeeBps);
     }
     const sentAt = args.now();
     let status: number;

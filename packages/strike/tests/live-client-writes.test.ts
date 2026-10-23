@@ -19,6 +19,7 @@ const order: StrategyOrder = {
   limitPrice: "84482",
   stopPrice: "83200",
   targetPrice: "86800",
+  builderFeeBps: null,
 };
 
 const failure = async (promise: Promise<unknown>): Promise<Error> => {
@@ -55,6 +56,29 @@ describe("placeStrategy", () => {
       entryClientOrderId: order.entryClientOrderId,
       accountId: "5f0c1a7e-3b2d-4c8e-9f1a-2d3c4b5a6e7f",
     });
+  });
+
+  it("attaches a curator fee as the unsigned X-Builder-Fee-Bps header, only when asked", async () => {
+    const plain = liveHarness(() => reply("documented/ref-types-order__strategy-ack.json", 201));
+    await plain.client.placeStrategy(order);
+    expect(onlyRequest(plain.exchange()).headers.has("x-builder-fee-bps")).toBe(false);
+
+    const charged = liveHarness(() => reply("documented/ref-types-order__strategy-ack.json", 201));
+    await charged.client.placeStrategy({ ...order, builderFeeBps: 5 });
+    const request = onlyRequest(charged.exchange());
+    expect(request.headers.get("x-builder-fee-bps")).toBe("5");
+    expect(request.body).toBe(JSON.stringify(strategyRequestBody(order)));
+    expect(charged.signatureVerifies(request)).toBe(true);
+  });
+
+  it("sends nothing for a builder fee Strike would never accept", async () => {
+    const harness = liveHarness(() => reply("documented/ref-types-order__strategy-ack.json", 201));
+    for (const builderFeeBps of [0, 101, 2.5]) {
+      await expect(harness.client.placeStrategy({ ...order, builderFeeBps })).rejects.toThrow(
+        RangeError,
+      );
+    }
+    expect(harness.requests).toHaveLength(0);
   });
 
   it("is rejected when Strike refuses the order with a 400", async () => {

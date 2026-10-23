@@ -18,7 +18,15 @@ export function toStrategyOrder(args: {
     limitPrice: args.proposal.limitPrice,
     stopPrice: args.plan.stopPrice,
     targetPrice: args.plan.targetPrice,
+    builderFeeBps: builderFeeHeaderBps(args.proposal.curatorFee?.feeBps ?? null),
   };
+}
+
+export function builderFeeHeaderBps(bps: number | null): number | null {
+  if (bps !== null && (!Number.isInteger(bps) || bps < 1 || bps > 100)) {
+    throw new RangeError("A builder fee must be a whole number of basis points from 1 to 100");
+  }
+  return bps;
 }
 
 export function exitsSurroundEntry(order: StrategyOrder): boolean {

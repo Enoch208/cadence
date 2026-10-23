@@ -1,6 +1,8 @@
+import { curatorFeeCharge } from "@cadence/core";
 import { describe, expect, it } from "vitest";
 import type { StrategyOrder } from "../src/client";
 import { StrikeAmbiguousError, StrikeRejectedError } from "../src/errors";
+import { addDecimal, subtractDecimal } from "../src/exact";
 import { createReplayStrikeClient } from "../src/replay-client";
 import { replayScenarios, type ReplayScenario } from "../src/replay-scenarios";
 
@@ -28,6 +30,7 @@ const entry = (intent: string, change: Partial<StrategyOrder> = {}): StrategyOrd
   limitPrice: "84218",
   stopPrice: "83200",
   targetPrice: "86800",
+  builderFeeBps: null,
   ...change,
 });
 
@@ -52,6 +55,32 @@ describe("a fillable FOK entry", () => {
     ]);
     expect(legs.every((leg) => leg.status === "untriggered" && leg.reduceOnly)).toBe(true);
     expect(legs.every((leg) => leg.strategyId === "cad-a" && !leg.isStrategyPrimary)).toBe(true);
+  });
+
+  it("charges a builder fee on the strategy's fills only when the order carries one", async () => {
+    const free = replay();
+    await free.client.placeStrategy(entry("a"));
+    const charged = replay();
+    await charged.client.placeStrategy(entry("a", { builderFeeBps: 5 }));
+    const entryCharge = curatorFeeCharge("84050", "0.01", 5);
+    expect(entryCharge).toBe("0.42");
+    expect(free.client.builderFeesPaid()).toBe("0");
+    expect(charged.client.builderFeesPaid()).toBe(entryCharge);
+    const balanceOf = async (client: typeof free.client) =>
+      (await client.accountState("BTC-USD")).account.availableBalance;
+    expect(subtractDecimal(await balanceOf(free.client), await balanceOf(charged.client))).toBe(
+      entryCharge,
+    );
+    expect((await charged.client.fills("BTC-USD", t0))[0]?.fee).toBe("0.42025");
+
+    await charged.client.closeReduceOnly({
+      clientOrderId: "cad-a-t",
+      symbol: "BTC-USD",
+      side: "sell",
+      size: "0.01",
+    });
+    const exitCharge = curatorFeeCharge("84040", "0.01", 5);
+    expect(charged.client.builderFeesPaid()).toBe(addDecimal(entryCharge, exitCharge));
   });
 
   it("opens the position and records the fill with its taker fee", async () => {

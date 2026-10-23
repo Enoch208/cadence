@@ -1,3 +1,4 @@
+import type { DecimalString } from "@cadence/core";
 import type { StrategyOrder, StrikeClient } from "./client";
 import { StrikeAmbiguousError, StrikeReadError } from "./errors";
 import { createReplayExchange } from "./replay-exchange";
@@ -5,6 +6,7 @@ import { capturedTierZeroFees, type ReplayScenario } from "./replay-scenarios";
 
 export type ReplayStrikeClient = StrikeClient & {
   submittedStrategies(): readonly StrategyOrder[];
+  builderFeesPaid(): DecimalString;
 };
 
 const settled = <T>(work: () => T): Promise<T> =>
@@ -71,5 +73,6 @@ export function createReplayStrikeClient(
         exchange.configure(symbol, settings);
       }),
     submittedStrategies: exchange.submitted,
+    builderFeesPaid: exchange.builderFeesPaid,
   };
 }

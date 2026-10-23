@@ -23,6 +23,7 @@ export function createReplayExchange(scenario: ReplayScenario, now: () => number
   const accountId = `replay:${scenario.name}`;
   const orders: ExchangeOrderSnapshot[] = [];
   const submitted: StrategyOrder[] = [];
+  const builderFeeBpsByClientId = new Map<string, number>();
   let leverage = scenario.leverage;
   const ledger = createReplayLedger({
     startingBalance: scenario.availableBalance,
@@ -41,7 +42,8 @@ export function createReplayExchange(scenario: ReplayScenario, now: () => number
   }
 
   function execute(order: ExchangeOrderSnapshot, price: DecimalString, size: DecimalString) {
-    if (ledger.fill(order, price, size, leverage).positionClosed) {
+    const builderFeeBps = builderFeeBpsByClientId.get(order.clientOrderId) ?? 0;
+    if (ledger.fill(order, price, size, leverage, builderFeeBps).positionClosed) {
       for (const live of orders.filter((other) => other.reduceOnly && isLive(other))) {
         live.status = "canceled";
         live.closeReason = "position_closed";
@@ -56,6 +58,12 @@ export function createReplayExchange(scenario: ReplayScenario, now: () => number
       throw rejected("placeStrategy", problem);
     }
     submitted.push({ ...order });
+    if (order.builderFeeBps !== null) {
+      const legs = [order.entryClientOrderId, order.stopClientOrderId, order.targetClientOrderId];
+      for (const clientOrderId of legs) {
+        builderFeeBpsByClientId.set(clientOrderId, order.builderFeeBps);
+      }
+    }
     const buying = order.side === "buy";
     const quote = buying ? scenario.ask : scenario.bid;
     const reachable = compareDecimal(quote, order.limitPrice) * (buying ? 1 : -1) <= 0;
@@ -195,6 +203,7 @@ export function createReplayExchange(scenario: ReplayScenario, now: () => number
       return order === undefined ? null : { ...order };
     },
     fills: ledger.fills,
+    builderFeesPaid: ledger.builderFeesPaid,
     submitted: (): readonly StrategyOrder[] => submitted.map((order) => ({ ...order })),
   };
 }

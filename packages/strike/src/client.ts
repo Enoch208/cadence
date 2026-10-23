@@ -22,6 +22,7 @@ export type StrategyOrder = {
   limitPrice: DecimalString;
   stopPrice: DecimalString;
   targetPrice: DecimalString;
+  builderFeeBps: number | null;
 };
 
 export type StrategyAck = {
