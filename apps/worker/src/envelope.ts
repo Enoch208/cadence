@@ -1,6 +1,7 @@
 import { Decimal } from "decimal.js";
 import type {
   CadenceExposure,
+  CuratorFee,
   DecimalString,
   Direction,
   Environment,
@@ -8,7 +9,13 @@ import type {
 } from "@cadence/core";
 
 export type EnvelopeBreach =
-  "quantity_above_approval" | "limit_price_worse_than_approved" | "notional_above_live_ceiling";
+  | "curator_fee_changed"
+  | "quantity_above_approval"
+  | "limit_price_worse_than_approved"
+  | "notional_above_live_ceiling";
+
+export const sameCuratorFee = (approved: CuratorFee | null, now: CuratorFee | null) =>
+  approved?.builderCode === now?.builderCode && approved?.feeBps === now?.feeBps;
 
 export function envelopeBreach(args: {
   approved: Proposal;
@@ -18,6 +25,9 @@ export function envelopeBreach(args: {
   liveMaxNotional: DecimalString;
 }): EnvelopeBreach | null {
   const { approved, proposal } = args;
+  if (!sameCuratorFee(approved.curatorFee, proposal.curatorFee)) {
+    return "curator_fee_changed";
+  }
   if (new Decimal(proposal.quantity).greaterThan(approved.quantity)) {
     return "quantity_above_approval";
   }

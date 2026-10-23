@@ -1,4 +1,5 @@
 import type { Decision, PublishedPlan } from "@cadence/core";
+import { builderApprovalOf } from "@cadence/db";
 import {
   createReplayStrikeClient,
   replayScenarios,
@@ -31,7 +32,7 @@ export async function approved(setup: Setup = {}) {
         ? replayOf(member.connection, clock)
         : createReplayStrikeClient(setup.exchange, clock.now);
   const client = setup.client?.(replay) ?? replay;
-  const decision = await previewOn(client, plan, clock.now());
+  const decision = await previewOn(client, plan, clock.now(), builderApprovalOf(member.connection));
   const intent = await approve(member, version.id, setup.approved?.(decision) ?? decision);
   const deps = workerDeps(clock, () => client, setup.liveMaxNotional);
   return { clock, planRow, member, replay, client, intent, deps };

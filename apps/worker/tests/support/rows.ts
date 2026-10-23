@@ -94,21 +94,27 @@ export async function insertPlanVersion(planId: string, version: number, plan: P
   );
 }
 
+export type BuilderSpec = { builderCode: string; builderFeeBps: number };
+
 export type ConnectionSpec =
-  { environment: "replay"; scenario: ReplayScenarioName } | { environment: "live" };
+  | { environment: "replay"; scenario: ReplayScenarioName; builder?: BuilderSpec }
+  | { environment: "live"; builder?: BuilderSpec };
+
+const liveKey = {
+  environment: "live" as const,
+  publicKey: "a".repeat(64),
+  keyCiphertext: "c2VhbGVk",
+  keyIv: "AAAAAAAAAAAAAAAA",
+  keyTag: "AAAAAAAAAAAAAAAAAAAAAA==",
+  keyVersion: 1,
+};
 
 const connectionColumns = (spec: ConnectionSpec) =>
   spec.environment === "replay"
-    ? { environment: "replay" as const, replayScenario: spec.scenario }
-    : {
-        environment: "live" as const,
-        publicKey: "a".repeat(64),
-        keyCiphertext: "c2VhbGVk",
-        keyIv: "AAAAAAAAAAAAAAAA",
-        keyTag: "AAAAAAAAAAAAAAAAAAAAAA==",
-        keyVersion: 1,
-        credentialSource: "api_key" as const,
-      };
+    ? { environment: "replay" as const, replayScenario: spec.scenario, ...spec.builder }
+    : spec.builder === undefined
+      ? { ...liveKey, credentialSource: "api_key" as const }
+      : { ...liveKey, credentialSource: "builder" as const, ...spec.builder };
 
 export type Member = Awaited<ReturnType<typeof insertMember>>;
 

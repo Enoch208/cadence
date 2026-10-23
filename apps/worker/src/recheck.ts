@@ -2,6 +2,7 @@ import { and, count, eq, inArray, ne } from "drizzle-orm";
 import {
   decide,
   freshness,
+  type CuratorFee,
   type Decision,
   type DecisionInput,
   type IntentState,
@@ -83,6 +84,11 @@ async function decisionInputFor(
   };
 }
 
+const curatorFeeData = (name: string, fee: CuratorFee | null): EventData => ({
+  [`${name}Code`]: fee?.builderCode ?? null,
+  [`${name}Bps`]: fee?.feeBps ?? null,
+});
+
 const onlyExpired = (decision: Decision) =>
   decision.reasons.length === 1 && decision.reasons[0] === "PLAN_EXPIRED";
 
@@ -122,6 +128,8 @@ export async function recheckIntent(
       approvedLimitPrice: context.intent.approved.limitPrice,
       quantity: decision.proposal.quantity,
       limitPrice: decision.proposal.limitPrice,
+      ...curatorFeeData("approvedCuratorFee", context.intent.approved.curatorFee),
+      ...curatorFeeData("curatorFee", decision.proposal.curatorFee),
     });
   }
   return { kind: "send", proposal: decision.proposal, decision };
