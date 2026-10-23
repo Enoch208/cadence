@@ -2,10 +2,16 @@ import { Decimal } from "decimal.js";
 import { and, eq, isNull } from "drizzle-orm";
 import type { DecimalString, ExchangeFill, OrderSide } from "@cadence/core";
 import { exchangeOrders, fills, type ExchangeOrderRow, type Tx } from "@cadence/db";
+import { orphanCloseFills } from "./close-view";
 
 export type AttributedFill = { fill: ExchangeFill; row: ExchangeOrderRow };
 
-export type EntryClaim = { openingSide: OrderSide; submittedAt: number; quantity: DecimalString };
+export type EntryClaim = {
+  openingSide: OrderSide;
+  submittedAt: number;
+  quantity: DecimalString;
+  closeAttemptedAt: number | null;
+};
 
 export const fillClockSkewMs = 5_000;
 
@@ -57,7 +63,11 @@ export function attributeFills(
       byOrderId.get(fill.orderId);
     return row === undefined ? [] : [{ fill, row }];
   });
-  return [...known, ...orphanEntryFills(observed, rows, known, claim)];
+  return [
+    ...known,
+    ...orphanEntryFills(observed, rows, known, claim),
+    ...orphanCloseFills(observed, rows, known, { ...claim, skewMs: fillClockSkewMs }),
+  ];
 }
 
 export type FillFacts = {

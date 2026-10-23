@@ -238,7 +238,12 @@ describe("attributing fills", () => {
     ...change,
   });
   const rows = [row("entry", "cad-i-e", null), row("target", "cad-i-t", "1000003")];
-  const claim = { openingSide: "buy" as const, submittedAt: 100_000, quantity: "0.012" };
+  const claim = {
+    openingSide: "buy" as const,
+    submittedAt: 100_000,
+    quantity: "0.012",
+    closeAttemptedAt: null,
+  };
 
   it("claims fills by client ID or exchange order ID and counts every fill toward flatness", () => {
     const observed = [

@@ -4,6 +4,7 @@ import type { ExchangeOrderRow, Tx } from "@cadence/db";
 import type { WorkerDeps } from "./deps";
 import { entryVerdict } from "./entry-verdict";
 import { cancelLeftoverExits } from "./close-position";
+import { closeView } from "./close-view";
 import { heldPosition, isLive, summarizeExits, type LegExpectation } from "./exits";
 import { attributeFills, fillFacts, storeFills, type AttributedFill } from "./fills";
 import { intentRef, loadIntentContext, type IntentContext } from "./intent-context";
@@ -188,19 +189,15 @@ export async function reconcileIntent(deps: WorkerDeps, intentId: string): Promi
     loadOrderRows(deps.db, intentId),
     milestones(deps.db, intentId),
   ]);
-  const observation = await observe(client, context, rows);
-  const pass: Pass = {
-    context,
-    rows,
-    times,
-    observation,
-    ours: attributeFills(observation.fills, rows, {
-      openingSide: context.plan.direction === "long" ? "buy" : "sell",
-      submittedAt: times.submittedAt,
-      quantity: context.intent.approved.quantity,
-    }),
-    at: deps.now(),
-  };
+  const observed = await observe(client, context, rows);
+  const ours = attributeFills(observed.fills, rows, {
+    openingSide: context.plan.direction === "long" ? "buy" : "sell",
+    submittedAt: times.submittedAt,
+    quantity: context.intent.approved.quantity,
+    closeAttemptedAt: times.closeAttemptedAt,
+  });
+  const observation = closeView(observed, { rows, ours, context });
+  const pass: Pass = { context, rows, times, observation, ours, at: deps.now() };
   const judgment = await deps.db.transaction((tx) => judge(tx, pass));
   if (judgment.recovery !== null) {
     await recover(deps, client, judgment.recovery);

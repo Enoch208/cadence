@@ -76,6 +76,7 @@ async function sizeToClose(client: StrikeClient, deps: WorkerDeps, context: Inte
     openingSide,
     submittedAt: times.submittedAt,
     quantity: context.intent.approved.quantity,
+    closeAttemptedAt: times.closeAttemptedAt,
   });
   const { openSize } = fillFacts(observation.fills, ours, openingSide);
   return {

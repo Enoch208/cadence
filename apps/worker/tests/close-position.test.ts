@@ -1,5 +1,5 @@
-import { clientOrderIdFor } from "@cadence/core";
-import type { ReplayStrikeClient } from "@cadence/strike";
+import { clientOrderIdFor, type ExchangeOrderSnapshot } from "@cadence/core";
+import { StrikeRejectedError, type ReplayStrikeClient } from "@cadence/strike";
 import { describe, expect, it } from "vitest";
 import { closePosition } from "../src/close-position";
 import { reconcileIntent } from "../src/reconcile";
@@ -10,37 +10,88 @@ import { eventTypes, intentState, lastEventData, orderRowsOf, receiptOf } from "
 
 resetDatabaseBetweenTests();
 
-type LegLookup = "fresh" | "live_until_canceled" | "stale";
+type Exchange = "fresh" | "resting" | "resting_cancel_fails" | "lagging";
 
-function recording(legs: LegLookup) {
+const isLeg = (clientOrderId: string) => /-[st]$/.test(clientOrderId);
+const isClose = (clientOrderId: string) => clientOrderId.endsWith("-c");
+const notFound = () =>
+  new StrikeRejectedError({
+    operation: "cancel",
+    status: 404,
+    code: null,
+    message: "order not found",
+  });
+
+function recording(exchange: Exchange) {
   const closes: string[] = [];
   const cancels: string[] = [];
-  const isLeg = (clientOrderId: string) => /-[st]$/.test(clientOrderId);
-  const wrap = (replay: ReplayStrikeClient): ReplayStrikeClient => ({
-    ...replay,
-    closeReduceOnly: (order) => {
-      closes.push(order.clientOrderId);
-      return replay.closeReduceOnly(order);
-    },
-    cancel: (symbol, clientOrderId) => {
-      cancels.push(clientOrderId);
-      return replay.cancel(symbol, clientOrderId);
-    },
-    order: async (symbol, clientOrderId) => {
-      const order = await replay.order(symbol, clientOrderId);
-      const leftLive =
-        isLeg(clientOrderId) &&
-        (legs === "stale" || (legs === "live_until_canceled" && !cancels.includes(clientOrderId)));
-      return order !== null && leftLive
-        ? { ...order, status: "untriggered", closeReason: null }
-        : order;
-    },
-  });
+  const resting = exchange === "resting" || exchange === "resting_cancel_fails";
+  const stillResting = (clientOrderId: string) =>
+    exchange === "resting_cancel_fails" || !cancels.includes(clientOrderId);
+  const wrap = (replay: ReplayStrikeClient): ReplayStrikeClient => {
+    const legIds = () =>
+      replay
+        .submittedStrategies()
+        .flatMap((order) => [order.stopClientOrderId, order.targetClientOrderId]);
+    const untriggered = (order: ExchangeOrderSnapshot): ExchangeOrderSnapshot => ({
+      ...order,
+      status: "untriggered",
+      closeReason: null,
+    });
+    return {
+      ...replay,
+      closeReduceOnly: (order) => {
+        closes.push(order.clientOrderId);
+        return replay.closeReduceOnly(order);
+      },
+      cancel: (symbol, clientOrderId) => {
+        cancels.push(clientOrderId);
+        return exchange === "resting_cancel_fails"
+          ? Promise.reject(notFound())
+          : replay.cancel(symbol, clientOrderId);
+      },
+      order: async (symbol, clientOrderId) => {
+        const order = await replay.order(symbol, clientOrderId);
+        if (order === null || exchange === "fresh") {
+          return order;
+        }
+        if (exchange === "lagging" && isClose(clientOrderId)) {
+          return null;
+        }
+        const stale = exchange === "lagging" || (resting && stillResting(clientOrderId));
+        return isLeg(clientOrderId) && stale ? untriggered(order) : order;
+      },
+      accountState: async (symbol) => {
+        const state = await replay.accountState(symbol);
+        if (!resting) {
+          return state;
+        }
+        const shown = new Set(state.openOrders.map((order) => order.clientOrderId));
+        const legs = await Promise.all(legIds().map((id) => replay.order(symbol, id)));
+        const left = legs.flatMap((order) =>
+          order !== null && !shown.has(order.clientOrderId) && stillResting(order.clientOrderId)
+            ? [untriggered(order)]
+            : [],
+        );
+        return { ...state, openOrders: [...state.openOrders, ...left] };
+      },
+      fills: async (symbol, sinceMs) => {
+        const fills = await replay.fills(symbol, sinceMs);
+        return exchange === "lagging"
+          ? fills.map((fill) =>
+              fill.clientOrderId !== null && isClose(fill.clientOrderId)
+                ? { ...fill, clientOrderId: null }
+                : fill,
+            )
+          : fills;
+      },
+    };
+  };
   return { closes, cancels, wrap };
 }
 
-async function openPosition(legs: LegLookup = "fresh") {
-  const { closes, cancels, wrap } = recording(legs);
+async function openPosition(exchange: Exchange = "fresh") {
+  const { closes, cancels, wrap } = recording(exchange);
   const setup = await approved({ client: wrap });
   await submitIntent(setup.deps, setup.intent.id);
   await reconcileIntent(setup.deps, setup.intent.id);
@@ -85,7 +136,7 @@ describe("closing a position the member wants out of", () => {
   });
 
   it("cancels a stop and target the exchange left live after the close, then reconciles", async () => {
-    const { intent, deps, cancels } = await openPosition("live_until_canceled");
+    const { intent, deps, cancels } = await openPosition("resting");
 
     await closePosition(deps, intent.id);
     await reconcileIntent(deps, intent.id);
@@ -100,8 +151,8 @@ describe("closing a position the member wants out of", () => {
     expect(await receiptOf(intent.id)).toMatchObject({ state: "closed", incomplete: [] });
   });
 
-  it("tries each leftover cancel once while a stale lookup still shows the exits live", async () => {
-    const { intent, deps, cancels } = await openPosition("stale");
+  it("tries each leftover cancel once when the exchange keeps refusing it", async () => {
+    const { intent, deps, cancels } = await openPosition("resting_cancel_fails");
 
     await closePosition(deps, intent.id);
     for (let pass = 0; pass < 3; pass += 1) {
@@ -113,6 +164,27 @@ describe("closing a position the member wants out of", () => {
       clientOrderIdFor(intent.id, "target"),
     ]);
     expect(await intentState(intent.id)).toBe("open_verified");
+  });
+
+  it("reconciles the close while Strike's order lookup lags behind its fills", async () => {
+    const { intent, deps, cancels } = await openPosition("lagging");
+
+    await closePosition(deps, intent.id);
+    await reconcileIntent(deps, intent.id);
+
+    expect(cancels).toEqual([]);
+    expect(await intentState(intent.id)).toBe("closed");
+    expect((await orderRowsOf(intent.id)).map((row) => [row.role, row.lastStatus])).toEqual([
+      ["entry", "filled"],
+      ["stop", "canceled"],
+      ["target", "canceled"],
+      ["close", "filled"],
+    ]);
+    expect(await receiptOf(intent.id)).toMatchObject({
+      state: "closed",
+      incomplete: [],
+      exit: { size: intent.approved.quantity, averagePrice: "84040" },
+    });
   });
 
   it("sends nothing for an intent with no open position", async () => {

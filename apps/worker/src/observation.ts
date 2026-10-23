@@ -63,7 +63,11 @@ export async function observe(
   return { account, orders, fills };
 }
 
-export type Milestones = { submittedAt: number; filledAt: number | null };
+export type Milestones = {
+  submittedAt: number;
+  filledAt: number | null;
+  closeAttemptedAt: number | null;
+};
 
 export async function milestones(db: Executor, intentId: string): Promise<Milestones> {
   const rows = await db
@@ -72,7 +76,7 @@ export async function milestones(db: Executor, intentId: string): Promise<Milest
     .where(
       and(
         eq(events.correlationId, intentId),
-        inArray(events.type, ["submit_attempted", "fill_observed"]),
+        inArray(events.type, ["submit_attempted", "fill_observed", "close_attempted"]),
       ),
     )
     .groupBy(events.type);
@@ -81,5 +85,5 @@ export async function milestones(db: Executor, intentId: string): Promise<Milest
   if (submittedAt === null) {
     throw new Error(`Intent ${intentId} has no record of its submission`);
   }
-  return { submittedAt, filledAt: at("fill_observed") };
+  return { submittedAt, filledAt: at("fill_observed"), closeAttemptedAt: at("close_attempted") };
 }
