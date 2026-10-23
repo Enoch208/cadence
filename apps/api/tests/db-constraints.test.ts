@@ -185,6 +185,63 @@ describe("database invariants", () => {
     ).resolves.toMatchObject([{ credentialSource: "builder" }]);
   });
 
+  it("keeps a builder approval whole, in Strike's range and on a builder or replay account", async () => {
+    const user = await insertUser(3006);
+    const live = {
+      userId: user.id,
+      environment: "live" as const,
+      createdAt: testNow,
+      publicKey: "d".repeat(64),
+      keyCiphertext: "c2VhbGVk",
+      keyIv: "AAAAAAAAAAAAAAAA",
+      keyTag: "AAAAAAAAAAAAAAAAAAAAAA==",
+      keyVersion: 1,
+    };
+    const refused: [Record<string, unknown>, string][] = [
+      [{ credentialSource: "api_key", builderCode: "kemi", builderFeeBps: 5 }, "needs_builder"],
+      [{ credentialSource: "builder", builderCode: "kemi" }, "approval_whole"],
+      [{ credentialSource: "builder", builderFeeBps: 5 }, "approval_whole"],
+      [{ credentialSource: "builder", builderCode: "kemi", builderFeeBps: 101 }, "bps_range"],
+    ];
+    for (const [index, [fields, constraint]] of refused.entries()) {
+      await expect(
+        db.insert(accountConnections).values({
+          ...live,
+          credentialSource: "builder",
+          strikeAccountId: `strike-main-${String(index)}`,
+          ...fields,
+        }),
+      ).rejects.toMatchObject(
+        violation(
+          "23514",
+          {
+            needs_builder: "account_connections_builder_code_needs_builder_connect",
+            approval_whole: "account_connections_builder_approval_whole",
+            bps_range: "account_connections_builder_fee_bps_range",
+          }[constraint] ?? constraint,
+        ),
+      );
+    }
+    const kept = [
+      { ...live, strikeAccountId: "strike-main-ok", credentialSource: "builder" as const },
+      {
+        userId: user.id,
+        environment: "replay" as const,
+        strikeAccountId: "replay-builder",
+        replayScenario: "happy_path",
+        createdAt: testNow,
+      },
+    ];
+    for (const row of kept) {
+      await expect(
+        db
+          .insert(accountConnections)
+          .values({ ...row, builderCode: "kemi", builderFeeBps: 5 })
+          .returning(),
+      ).resolves.toMatchObject([{ builderCode: "kemi", builderFeeBps: 5 }]);
+    }
+  });
+
   it("keeps a pending wallet connection to one lowercase key and one Strike nonce", async () => {
     const user = await insertUser(3005);
     const challenge = {

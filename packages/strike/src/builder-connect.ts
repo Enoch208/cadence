@@ -44,14 +44,25 @@ export type RegisteredBuilderWallet = {
   publicKeyHex: string;
 };
 
+export const builderTermsSchema = z.strictObject({
+  builderCode: builderCodeSchema,
+  feeShareBps: z.number().int().min(0).max(100),
+});
+export type BuilderTerms = z.infer<typeof builderTermsSchema>;
+
+export type BuilderSignatureRequest = BuilderWallet & { publicKeyHex: string; terms: BuilderTerms };
+
+export type BuilderSignatureCheck = {
+  nonce: string;
+  walletSignature: string;
+  publicKeyHex: string;
+  terms: BuilderTerms;
+};
+
 export interface BuilderConnectClient {
-  readonly builderCode: string;
-  requestSignature(input: BuilderWallet & { publicKeyHex: string }): Promise<BuilderChallenge>;
-  verifySignature(input: {
-    nonce: string;
-    walletSignature: string;
-    publicKeyHex: string;
-  }): Promise<RegisteredBuilderWallet>;
+  readonly ownTerms: BuilderTerms;
+  requestSignature(input: BuilderSignatureRequest): Promise<BuilderChallenge>;
+  verifySignature(input: BuilderSignatureCheck): Promise<RegisteredBuilderWallet>;
 }
 
 export type BuilderConnectClientArgs = {
@@ -78,21 +89,29 @@ export function createBuilderConnectClient(args: BuilderConnectClientArgs): Buil
     error: () => "The builder code is not a Strike builder code",
   });
   const transport = createTransport(args);
+  const termsOf = (terms: BuilderTerms) => {
+    const parsed = builderTermsSchema.safeParse(terms);
+    if (!parsed.success) {
+      throw new RangeError("These are not builder terms Strike accepts");
+    }
+    return parsed.data;
+  };
 
-  async function requestSignature(input: BuilderWallet & { publicKeyHex: string }) {
+  async function requestSignature(input: BuilderSignatureRequest) {
+    const terms = termsOf(input.terms);
     const publicKeyHex = input.publicKeyHex.toLowerCase();
     const request = connectRequest("builderRequestSignature", "/auth/builder/request-signature", {
       address: input.address,
       chain: input.chain,
-      code: builderCode,
-      fee_share_bps: builderFeeShareBps,
+      code: terms.builderCode,
+      fee_share_bps: terms.feeShareBps,
       public_key: publicKeyHex,
     });
     const reply = await transport.send(request);
     const challenge = shaped(request, () => challengeResponseSchema.parse(reply.body));
     const message = challenge.message_to_sign;
-    const binds = [`"${builderCode}"`, publicKeyHex, challenge.nonce, input.address].every((part) =>
-      mentions(message, part),
+    const binds = [`"${terms.builderCode}"`, publicKeyHex, challenge.nonce, input.address].every(
+      (part) => mentions(message, part),
     );
     if (!binds) {
       throw misanswered(request.operation, "Strike's consent message does not name this request");
@@ -100,11 +119,8 @@ export function createBuilderConnectClient(args: BuilderConnectClientArgs): Buil
     return { nonce: challenge.nonce, message };
   }
 
-  async function verifySignature(input: {
-    nonce: string;
-    walletSignature: string;
-    publicKeyHex: string;
-  }): Promise<RegisteredBuilderWallet> {
+  async function verifySignature(input: BuilderSignatureCheck): Promise<RegisteredBuilderWallet> {
+    const terms = termsOf(input.terms);
     const request = connectRequest("builderVerifySignature", "/auth/builder/verify-signature", {
       nonce: input.nonce,
       wallet_signature: input.walletSignature,
@@ -114,8 +130,8 @@ export function createBuilderConnectClient(args: BuilderConnectClientArgs): Buil
     const publicKeyHex = wallet.api_wallet_public_key.toLowerCase();
     if (
       publicKeyHex !== input.publicKeyHex.toLowerCase() ||
-      wallet.builder_code !== builderCode ||
-      wallet.fee_share_bps !== builderFeeShareBps
+      wallet.builder_code !== terms.builderCode ||
+      wallet.fee_share_bps !== terms.feeShareBps
     ) {
       throw misanswered(request.operation, "Strike registered a different wallet than requested");
     }
@@ -128,5 +144,6 @@ export function createBuilderConnectClient(args: BuilderConnectClientArgs): Buil
     };
   }
 
-  return { builderCode, requestSignature, verifySignature };
+  const ownTerms = { builderCode, feeShareBps: builderFeeShareBps };
+  return { ownTerms, requestSignature, verifySignature };
 }

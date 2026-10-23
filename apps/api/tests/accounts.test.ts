@@ -178,6 +178,8 @@ describe("replay accounts and pausing", () => {
           environment: "replay",
           strikeAccountId: (created.body as { strikeAccountId: string }).strikeAccountId,
           credentialSource: null,
+          builderCode: null,
+          builderFeeBps: null,
           status: "paused",
         },
       ],

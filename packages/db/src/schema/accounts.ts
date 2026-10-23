@@ -20,6 +20,8 @@ export const accountConnections = pgTable(
     keyTag: text("key_tag"),
     keyVersion: integer("key_version"),
     credentialSource: credentialSourceEnum("credential_source"),
+    builderCode: text("builder_code"),
+    builderFeeBps: integer("builder_fee_bps"),
     replayScenario: text("replay_scenario"),
     status: connectionStatusEnum("status").notNull().default("active"),
     createdAt: instant("created_at").notNull(),
@@ -42,6 +44,19 @@ export const accountConnections = pgTable(
         and ${table.keyIv} is null and ${table.keyTag} is null
         and ${table.keyVersion} is null and ${table.credentialSource} is null
         and ${table.replayScenario} is not null)`,
+    ),
+    check(
+      "account_connections_builder_approval_whole",
+      sql`(${table.builderCode} is null) = (${table.builderFeeBps} is null)`,
+    ),
+    check(
+      "account_connections_builder_fee_bps_range",
+      sql`${table.builderFeeBps} is null or ${table.builderFeeBps} between 0 and 100`,
+    ),
+    check(
+      "account_connections_builder_code_needs_builder_connect",
+      sql`${table.builderCode} is null or ${table.environment} = 'replay'
+        or ${table.credentialSource} = 'builder'`,
     ),
   ],
 );

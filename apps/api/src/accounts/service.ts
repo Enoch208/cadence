@@ -14,6 +14,8 @@ export const accountView = (row: AccountConnectionRow) => ({
   environment: row.environment,
   strikeAccountId: row.strikeAccountId,
   credentialSource: row.credentialSource,
+  builderCode: row.builderCode,
+  builderFeeBps: row.builderFeeBps,
   status: row.status,
 });
 

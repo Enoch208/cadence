@@ -7,6 +7,7 @@ import {
   walletChains,
   walletSignatureSchema,
   type BuilderConnectClient,
+  type BuilderSignatureCheck,
   type BuilderWallet,
   type RegisteredBuilderWallet,
 } from "@cadence/strike";
@@ -20,6 +21,7 @@ import {
   savePendingChallenge,
 } from "./builder-challenges";
 import { storeLiveConnection } from "./live-connection";
+import { builderTermsFor } from "./plan-terms";
 
 const challengeMarginMs = 30_000;
 
@@ -68,7 +70,7 @@ export function builderClient(deps: AppDeps): BuilderConnectClient {
 
 export const builderAvailability = (deps: AppDeps) => ({
   available: deps.builderConnect !== null,
-  builderCode: deps.builderConnect?.builderCode ?? null,
+  builderCode: deps.builderConnect?.ownTerms.builderCode ?? null,
   feeBps: builderFeeShareBps,
   chains: walletChains,
   liveMaxNotional: deps.env.CADENCE_LIVE_MAX_NOTIONAL,
@@ -97,30 +99,39 @@ function verifyRefusal(error: StrikeRejectedError): HttpError {
   return /challenge/i.test(error.strikeMessage) ? challengeSpent() : walletRefused();
 }
 
-export async function startBuilderConnect(deps: AppDeps, userId: string, wallet: BuilderWallet) {
+export async function startBuilderConnect(
+  deps: AppDeps,
+  userId: string,
+  wallet: BuilderWallet,
+  planPublicId: string | null,
+) {
   const builder = builderClient(deps);
+  const terms = await builderTermsFor(deps.db, builder, planPublicId);
   const startedAt = deps.now();
   const keys = generateSignerKeys();
   const challenge = await askStrike("start connecting your wallet", () =>
     refusalsAs(
-      () => builder.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex }),
+      () => builder.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex, terms }),
       startRefusal,
     ),
   );
   const expiresAt = startedAt + builderChallengeLifetimeMs - challengeMarginMs;
-  const row = await savePendingChallenge(deps, userId, { wallet, keys, challenge, expiresAt });
+  const pending = { wallet, keys, challenge, terms, expiresAt };
+  const row = await savePendingChallenge(deps, userId, pending);
   return {
     challengeId: row.id,
     chain: row.walletChain,
     address: row.walletAddress,
     message: row.consentMessage,
+    builderCode: terms.builderCode,
+    feeBps: terms.feeShareBps,
     expiresAt: row.expiresAt,
   };
 }
 
 function registered(
   builder: BuilderConnectClient,
-  request: { nonce: string; walletSignature: string; publicKeyHex: string },
+  request: BuilderSignatureCheck,
 ): Promise<RegisteredBuilderWallet | null> {
   return askStrike("connect your wallet", async () => {
     try {
@@ -150,6 +161,10 @@ export async function finishBuilderConnect(
 ) {
   const builder = builderClient(deps);
   const pending = await livePendingChallenge(deps, userId, input.challengeId);
+  if (pending.builderCode === null) {
+    throw challengeSpent();
+  }
+  const terms = { builderCode: pending.builderCode, feeShareBps: pending.builderFeeBps };
   const signature = walletSignatureSchema(pending.walletChain).safeParse(input.signature);
   if (!signature.success) {
     throw invalidRequest(`That is not a ${pending.walletChain} wallet signature.`);
@@ -159,6 +174,7 @@ export async function finishBuilderConnect(
     nonce: pending.strikeNonce,
     walletSignature: signature.data,
     publicKeyHex: pending.publicKey,
+    terms,
   });
   const store = () =>
     storeLiveConnection(deps, userId, {
@@ -166,10 +182,12 @@ export async function finishBuilderConnect(
       privateKeyHex,
       source: "builder",
       reportedAccountId: wallet?.accountId ?? null,
+      builderApproval: { builderCode: terms.builderCode, feeBps: terms.feeShareBps },
       detail: {
         walletChain: pending.walletChain,
         walletAddress: pending.walletAddress,
-        builderCode: builder.builderCode,
+        builderCode: terms.builderCode,
+        builderFeeBps: terms.feeShareBps,
         apiWalletId: wallet?.apiWalletId ?? null,
       },
     });

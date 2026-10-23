@@ -5,6 +5,7 @@ import type { AppDeps } from "../deps";
 import { unprocessable } from "../http/errors";
 import { effectivePolicy } from "../policies/service";
 import { configureMarkets, recordConnection, storeLiveConnection } from "./live-connection";
+import { curatorFeeOfPlan } from "./plan-terms";
 
 function proveKeyPair(keys: { publicKey: string; privateKey: string }): Signer {
   try {
@@ -27,6 +28,7 @@ export function connectLiveAccount(
     privateKeyHex: keys.privateKey,
     source: "api_key",
     reportedAccountId: null,
+    builderApproval: null,
     detail: {},
   });
 }
@@ -35,7 +37,9 @@ export async function connectReplayAccount(
   deps: AppDeps,
   userId: string,
   scenario: ReplayScenarioName,
+  planPublicId: string | null,
 ) {
+  const curatorFee = planPublicId === null ? null : await curatorFeeOfPlan(deps.db, planPublicId);
   const row: AccountConnectionRow = {
     id: randomUUID(),
     userId,
@@ -47,11 +51,14 @@ export async function connectReplayAccount(
     keyTag: null,
     keyVersion: null,
     credentialSource: null,
+    builderCode: curatorFee?.builderCode ?? null,
+    builderFeeBps: curatorFee?.feeBps ?? null,
     replayScenario: scenario,
     status: "active",
     createdAt: deps.now(),
   };
   await configureMarkets(deps.strike.forConnection(row), await effectivePolicy(deps.db, userId));
   const [inserted] = await deps.db.insert(accountConnections).values(row).returning();
-  return recordConnection(deps, userId, inserted ?? row);
+  const detail = curatorFee === null ? {} : { builderCode: curatorFee.builderCode };
+  return recordConnection(deps, userId, inserted ?? row, detail);
 }

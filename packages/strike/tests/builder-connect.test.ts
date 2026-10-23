@@ -33,13 +33,19 @@ function builderHarness(route: (request: RecordedRequest) => Reply) {
 }
 
 const wallet = { chain: "solana" as const, address: solanaAddress };
+const terms = { builderCode: code, feeShareBps: 0 };
+const curatorTerms = { builderCode: "range_traders", feeShareBps: 5 };
 
 describe("requesting a builder connect challenge", () => {
   it("asks Strike for the consent message with a zero fee and no API wallet headers", async () => {
     const keys = generateSignerKeys();
     const fields = { code, ...wallet, publicKeyHex: keys.publicKeyHex, nonce: documentedNonce };
     const { client, requests } = builderHarness(() => challengeReply(fields));
-    const challenge = await client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex });
+    const challenge = await client.requestSignature({
+      ...wallet,
+      publicKeyHex: keys.publicKeyHex,
+      terms,
+    });
     expect(challenge.nonce).toBe(documentedNonce);
     expect(challenge.message).toContain(`API Key: ${keys.publicKeyHex}`);
     expect(challenge.message).toContain("entrusting your API wallet private key");
@@ -64,20 +70,56 @@ describe("requesting a builder connect challenge", () => {
     const fields = { code, ...wallet, publicKeyHex: other.publicKeyHex, nonce: documentedNonce };
     const { client } = builderHarness(() => challengeReply(fields));
     await expect(
-      client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex }),
+      client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex, terms }),
     ).rejects.toBeInstanceOf(StrikeAmbiguousError);
     const wrongBuilder = builderHarness(() =>
       challengeReply({ ...fields, code: "someone-else", publicKeyHex: keys.publicKeyHex }),
     );
     await expect(
-      wrongBuilder.client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex }),
+      wrongBuilder.client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex, terms }),
     ).rejects.toBeInstanceOf(StrikeAmbiguousError);
+  });
+
+  it("asks Strike to approve a curator's code at the plan's fee instead of Cadence's own", async () => {
+    const keys = generateSignerKeys();
+    const fields = {
+      code: curatorTerms.builderCode,
+      ...wallet,
+      publicKeyHex: keys.publicKeyHex,
+      nonce: documentedNonce,
+    };
+    const { client, requests } = builderHarness(() => challengeReply(fields));
+    await client.requestSignature({
+      ...wallet,
+      publicKeyHex: keys.publicKeyHex,
+      terms: curatorTerms,
+    });
+    expect(JSON.parse(requests[0]?.body ?? "")).toMatchObject({
+      code: "range_traders",
+      fee_share_bps: 5,
+    });
+    expect(client.ownTerms).toEqual({ builderCode: code, feeShareBps: 0 });
+  });
+
+  it("refuses terms Strike could never accept before anything is sent", async () => {
+    const keys = generateSignerKeys();
+    const { client, requests } = builderHarness(() => json(500, "{}"));
+    for (const bad of [
+      { builderCode: "not a code", feeShareBps: 0 },
+      { builderCode: code, feeShareBps: 101 },
+      { builderCode: code, feeShareBps: 2.5 },
+    ]) {
+      await expect(
+        client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex, terms: bad }),
+      ).rejects.toThrow(/builder terms/);
+    }
+    expect(requests).toEqual([]);
   });
 
   it("passes on Strike's refusal of an inactive builder code", async () => {
     const keys = generateSignerKeys();
     const { client } = builderHarness(() => json(400, '{"error":"builder is not active"}'));
-    const refusal = client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex });
+    const refusal = client.requestSignature({ ...wallet, publicKeyHex: keys.publicKeyHex, terms });
     await expect(refusal).rejects.toBeInstanceOf(StrikeRejectedError);
     await expect(refusal).rejects.toMatchObject({ status: 400 });
   });
@@ -105,6 +147,7 @@ describe("verifying the member's wallet signature", () => {
       nonce: documentedNonce,
       walletSignature: "5Kd8Cj",
       publicKeyHex: keys.publicKeyHex,
+      terms,
     });
     expect(registered).toEqual({
       accountId: documentedAccountId,
@@ -123,6 +166,20 @@ describe("verifying the member's wallet signature", () => {
 
   it("treats a wallet Strike says it registered for another key, builder or fee as unknown", async () => {
     const keys = generateSignerKeys();
+    const curator = builderHarness(() =>
+      verifiedReply(
+        { code: "range_traders", publicKeyHex: keys.publicKeyHex },
+        { fee_share_bps: 5 },
+      ),
+    );
+    await expect(
+      curator.client.verifySignature({
+        nonce: documentedNonce,
+        walletSignature: "5Kd8Cj",
+        publicKeyHex: keys.publicKeyHex,
+        terms: curatorTerms,
+      }),
+    ).resolves.toMatchObject({ builderCode: "range_traders", feeShareBps: 5 });
     const strays = [
       { api_wallet_public_key: generateSignerKeys().publicKeyHex },
       { builder_code: "someone-else" },
@@ -138,6 +195,7 @@ describe("verifying the member's wallet signature", () => {
           nonce: documentedNonce,
           walletSignature: "5Kd8Cj",
           publicKeyHex: keys.publicKeyHex,
+          terms,
         }),
       ).rejects.toBeInstanceOf(StrikeAmbiguousError);
     }
@@ -150,6 +208,7 @@ describe("verifying the member's wallet signature", () => {
         nonce: documentedNonce,
         walletSignature: "5Kd8Cj",
         publicKeyHex: keys.publicKeyHex,
+        terms,
       });
     await expect(
       attempt(json(401, '{"error":"wallet signature verification failed"}')),

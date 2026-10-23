@@ -9,6 +9,7 @@ import {
 import {
   createSigner,
   type BuilderChallenge,
+  type BuilderTerms,
   type BuilderWallet,
   type Signer,
   type SignerKeys,
@@ -36,6 +37,7 @@ export async function savePendingChallenge(
     wallet: BuilderWallet;
     keys: SignerKeys;
     challenge: BuilderChallenge;
+    terms: BuilderTerms;
     expiresAt: number;
   },
 ): Promise<BuilderChallengeRow> {
@@ -63,6 +65,8 @@ export async function savePendingChallenge(
         keyVersion: sealed.keyVersion,
         strikeNonce: pending.challenge.nonce,
         consentMessage: pending.challenge.message,
+        builderCode: pending.terms.builderCode,
+        builderFeeBps: pending.terms.feeShareBps,
         expiresAt: pending.expiresAt,
         createdAt: now,
       })

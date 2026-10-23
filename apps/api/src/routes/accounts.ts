@@ -21,10 +21,12 @@ const liveBody = z.strictObject({
     .regex(/^(?:[0-9a-fA-F]{64}|[0-9a-fA-F]{128})$/, "Use 64 or 128 hex characters"),
 });
 
-const replayBody = z.strictObject({ scenario: z.enum(replayScenarioNames) });
+const planPublicId = z.string().min(1).max(64).optional();
+
+const replayBody = z.strictObject({ scenario: z.enum(replayScenarioNames), planPublicId });
 
 const walletBody = <Chain extends WalletChain>(chain: Chain) =>
-  z.strictObject({ chain: z.literal(chain), address: walletAddressSchema(chain) });
+  z.strictObject({ chain: z.literal(chain), address: walletAddressSchema(chain), planPublicId });
 
 const builderStartBody = z.discriminatedUnion("chain", [
   walletBody("ethereum"),
@@ -52,8 +54,8 @@ export function accountRoutes(deps: AppDeps) {
     .get("/accounts/builder", signedIn, (c) => c.json(builderAvailability(deps)))
     .post("/accounts/builder/start", signedIn, async (c) => {
       builderClient(deps);
-      const wallet = await readBody(c, builderStartBody);
-      return c.json(await startBuilderConnect(deps, c.get("userId"), wallet), 201);
+      const { planPublicId: plan, ...wallet } = await readBody(c, builderStartBody);
+      return c.json(await startBuilderConnect(deps, c.get("userId"), wallet, plan ?? null), 201);
     })
     .post("/accounts/builder/finish", signedIn, async (c) => {
       builderClient(deps);
@@ -61,8 +63,8 @@ export function accountRoutes(deps: AppDeps) {
       return c.json(await finishBuilderConnect(deps, c.get("userId"), input), 201);
     })
     .post("/accounts/replay", signedIn, async (c) => {
-      const { scenario } = await readBody(c, replayBody);
-      return c.json(await connectReplayAccount(deps, c.get("userId"), scenario), 201);
+      const { scenario, planPublicId: plan } = await readBody(c, replayBody);
+      return c.json(await connectReplayAccount(deps, c.get("userId"), scenario, plan ?? null), 201);
     })
     .post("/accounts/:id/pause", signedIn, async (c) =>
       c.json(await setAccountStatus(deps, c.get("userId"), uuidParam(c, "id", missing), "paused")),

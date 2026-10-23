@@ -9,16 +9,22 @@ export const solanaWallet = {
 };
 export const memberSignature = "3".repeat(88);
 
-type Challenge = { address: string; chain: string; publicKey: string };
+type Challenge = {
+  address: string;
+  chain: string;
+  publicKey: string;
+  code: string;
+  feeShareBps: number;
+};
 type Scripted = { status: number; body: unknown } | "hang";
 
 const reply = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
-const consentMessage = (challenge: Challenge, nonce: string, code: string) =>
+const consentMessage = (challenge: Challenge, nonce: string) =>
   [
-    `Connect to Strike via builder "${code}".`,
-    "This authorizes the builder to collect up to 0% fee on your trades.",
+    `Connect to Strike via builder "${challenge.code}".`,
+    `This authorizes the builder to collect up to ${String(challenge.feeShareBps / 100)}% fee on your trades.`,
     "Referral attribution: none.",
     "By signing, you are entrusting your API wallet private key to this builder. You trust the builder to store and use this key responsibly.",
     `Wallet: ${challenge.address}`,
@@ -56,9 +62,11 @@ export function fakeBuilderStrike() {
       address: String(body.address),
       chain: String(body.chain),
       publicKey: String(body.public_key),
+      code: String(body.code),
+      feeShareBps: Number(body.fee_share_bps),
     };
     state.challenges.set(nonce, challenge);
-    const message = consentMessage(challenge, nonce, String(body.code));
+    const message = consentMessage(challenge, nonce);
     return reply(200, { nonce, message_to_sign: message, message });
   }
 
@@ -86,8 +94,8 @@ export function fakeBuilderStrike() {
       account_id: state.accountId,
       nickname: "",
       avatar_url: "",
-      builder_code: testBuilderCode,
-      fee_share_bps: 0,
+      builder_code: challenge.code,
+      fee_share_bps: challenge.feeShareBps,
       api_wallet_id: 4321,
       api_wallet_public_key: challenge.publicKey,
       api_wallet_expired_at: "9999-12-31T23:59:59Z",

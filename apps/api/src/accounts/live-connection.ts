@@ -17,11 +17,14 @@ import { accountView } from "./service";
 
 export type EventDetail = ApplicationEvent["data"];
 
+export type BuilderApproval = { builderCode: string; feeBps: number };
+
 export type LiveCredential = {
   signer: Signer;
   privateKeyHex: string;
   source: CredentialSource;
   reportedAccountId: string | null;
+  builderApproval: BuilderApproval | null;
   detail: EventDetail;
 };
 
@@ -113,6 +116,8 @@ export async function storeLiveConnection(deps: AppDeps, userId: string, live: L
     keyTag: sealed.tag,
     keyVersion: sealed.keyVersion,
     credentialSource: live.source,
+    builderCode: live.builderApproval?.builderCode ?? null,
+    builderFeeBps: live.builderApproval?.feeBps ?? null,
   };
   const [row] = await deps.db
     .insert(accountConnections)
