@@ -11,6 +11,7 @@ export * from "./digest";
 export * from "./grid";
 export * from "./pricing";
 export * from "./costs";
+export * from "./curator-fee";
 export * from "./margin";
 export * from "./decide";
 export * from "./transitions";

@@ -24,7 +24,13 @@ const proposal: Proposal = {
   limitPrice: "84268",
   notional: "1182.28",
   priceLoss: "16.08",
-  costs: { entryFee: "0.59", exitFee: "0.58", stopSlippageReserve: "0.58", fundingReserve: "1.22" },
+  costs: {
+    entryFee: "0.59",
+    exitFee: "0.58",
+    stopSlippageReserve: "0.58",
+    fundingReserve: "1.22",
+    curatorFee: "0",
+  },
   plannedLoss: "19.05",
   rewardRiskNet: "1.98",
   leverage: 5,
@@ -32,6 +38,7 @@ const proposal: Proposal = {
   estimatedLiquidationPrice: "67749",
   admissibleBudget: "20",
   limitedBy: "budget",
+  curatorFee: null,
 };
 
 const longOrder: StrategyOrder = toStrategyOrder({ intentId, plan: longPlan, proposal });

@@ -1,6 +1,7 @@
 import { Decimal } from "decimal.js";
 import { limitingFactors, type DecimalString, type LimitingFactor } from "./contract";
 import { perUnitLoss, type PerUnitLoss } from "./costs";
+import { appliedCuratorFee, curatorFeeRate } from "./curator-fee";
 import type { CostBreakdown, DecisionInput } from "./decision";
 import { Exact, moneyPlaces, roundTo } from "./exact";
 import { floorToStep } from "./grid";
@@ -41,16 +42,21 @@ export function plannedLossFor(quantity: DecimalString, perUnit: PerUnitLoss): P
     exitFee: reserve(perUnit.exitFee),
     stopSlippageReserve: reserve(perUnit.stopSlippageReserve),
     fundingReserve: reserve(perUnit.fundingReserve),
+    curatorFee: reserve(perUnit.curatorFee),
   };
   const plannedLoss = new Exact(priceLoss)
     .plus(costs.entryFee)
     .plus(costs.exitFee)
     .plus(costs.stopSlippageReserve)
-    .plus(costs.fundingReserve);
+    .plus(costs.fundingReserve)
+    .plus(costs.curatorFee);
   return { priceLoss, costs, plannedLoss: plannedLoss.toFixed(moneyPlaces) };
 }
 
-const reserveRoundingSlack = "0.05";
+const reserveRoundingSlack = "0.06";
+
+export const curatorFeeRateFor = (input: DecisionInput) =>
+  curatorFeeRate(appliedCuratorFee(input.plan, input.builderApproval));
 
 function budgetQuantity(budget: DecimalString, perUnit: PerUnitLoss, step: DecimalString) {
   const lotsWithin = (amount: Decimal) =>
@@ -89,6 +95,7 @@ export function sizeEntry(
     fees,
     policy: input.policy,
     mark: input.mark,
+    curatorFeeRate: curatorFeeRateFor(input),
   });
   const ceiling = input.quantityCeiling;
   const budgetBound = budgetQuantity(budget, perUnit, step);
@@ -134,7 +141,8 @@ export function entryTerms(input: DecisionInput, sized: SizedEntry): EntryTerms 
     plan.direction === "long"
       ? new Exact(plan.targetPrice).minus(entry)
       : entry.minus(plan.targetPrice);
-  const netReward = grossReward.minus(entry.plus(plan.targetPrice).times(fees.takerRate));
+  const exitAndEntryRate = curatorFeeRateFor(input).plus(fees.takerRate);
+  const netReward = grossReward.minus(entry.plus(plan.targetPrice).times(exitAndEntryRate));
   const rewardRisk = netReward.dividedBy(sized.perUnit.total);
   const tier = tierForNotional(notional.toFixed(), input.market.marginTiers);
   const liquidationPrice =

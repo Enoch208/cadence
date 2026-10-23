@@ -1,3 +1,4 @@
+import type { Decimal } from "decimal.js";
 import type { DecimalString, Direction } from "./contract";
 import type { CadenceExposure } from "./decision";
 import { Exact } from "./exact";
@@ -10,6 +11,7 @@ export type PerUnitLoss = {
   exitFee: DecimalString;
   stopSlippageReserve: DecimalString;
   fundingReserve: DecimalString;
+  curatorFee: DecimalString;
   total: DecimalString;
 };
 
@@ -20,6 +22,7 @@ export function perUnitLoss(args: {
   fees: FeeSchedule;
   policy: RiskPolicy;
   mark: MarkSnapshot;
+  curatorFeeRate: Decimal.Value;
 }): PerUnitLoss {
   const entry = new Exact(args.entry);
   const stop = new Exact(args.stop);
@@ -33,17 +36,20 @@ export function perUnitLoss(args: {
   const fundingReserve = entry
     .times(new Exact(args.mark.hourlyFundingRate).abs())
     .times(args.policy.fundingHorizonHours);
+  const curatorFee = entry.plus(stop).times(args.curatorFeeRate);
   const total = priceLoss
     .plus(entryFee)
     .plus(exitFee)
     .plus(stopSlippageReserve)
-    .plus(fundingReserve);
+    .plus(fundingReserve)
+    .plus(curatorFee);
   return {
     priceLoss: priceLoss.toFixed(),
     entryFee: entryFee.toFixed(),
     exitFee: exitFee.toFixed(),
     stopSlippageReserve: stopSlippageReserve.toFixed(),
     fundingReserve: fundingReserve.toFixed(),
+    curatorFee: curatorFee.toFixed(),
     total: total.toFixed(),
   };
 }

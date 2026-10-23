@@ -7,7 +7,13 @@ import {
   type IntentState,
   type Proposal,
 } from "@cadence/core";
-import { executionIntents, loadExposure, reservations, type Executor } from "@cadence/db";
+import {
+  builderApprovalOf,
+  executionIntents,
+  loadExposure,
+  reservations,
+  type Executor,
+} from "@cadence/db";
 import { readDecisionSnapshot, type StrikeClient } from "@cadence/strike";
 import type { WorkerDeps } from "./deps";
 import { envelopeBreach, exposureBesides } from "./envelope";
@@ -71,6 +77,7 @@ async function decisionInputFor(
     quantityCeiling: intent.approved.quantity,
     ...snapshot,
     accountReconciled: !unresolved,
+    builderApproval: builderApprovalOf(connection),
     exposure: exposureBesides(exposure, { market: intent.market, reservedLoss: ownLoss }),
     now: deps.now(),
   };

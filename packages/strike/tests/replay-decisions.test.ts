@@ -60,6 +60,7 @@ async function preview(name: ReplayScenarioName) {
     quantityCeiling: null,
     accountState,
     accountReconciled: true,
+    builderApproval: null,
     exposure: {
       busySymbols: [],
       knownClientOrderIds: [],

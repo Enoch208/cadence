@@ -1,4 +1,4 @@
-import { decide, type Decision, type PublishedPlan } from "@cadence/core";
+import { decide, type BuilderApproval, type Decision, type PublishedPlan } from "@cadence/core";
 import { replayClientForConnection, type AccountConnectionRow } from "@cadence/db";
 import {
   readDecisionSnapshot,
@@ -43,6 +43,7 @@ export async function previewOn(
   client: StrikeClient,
   plan: PublishedPlan,
   now: number,
+  builderApproval: BuilderApproval | null = null,
 ): Promise<Decision> {
   const snapshot = await readDecisionSnapshot(client, plan.market);
   return decide({
@@ -52,6 +53,7 @@ export async function previewOn(
     quantityCeiling: null,
     ...snapshot,
     accountReconciled: true,
+    builderApproval,
     exposure: {
       busySymbols: [],
       knownClientOrderIds: [],

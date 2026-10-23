@@ -1,6 +1,7 @@
 import { Decimal } from "decimal.js";
 import type { DecisionOutcome, DecimalString, LimitingFactor, ReasonCode } from "./contract";
 import type { DecisionInput, Proposal } from "./decision";
+import { appliedCuratorFee } from "./curator-fee";
 import { Exact, moneyPlaces, roundTo } from "./exact";
 import { plannedLossFor, type EntryTerms, type SizedEntry } from "./sizing";
 
@@ -46,5 +47,6 @@ export function proposalFor(
     estimatedLiquidationPrice: roundTo(new Exact(liquidationPrice), tickPlaces, towardEntry),
     admissibleBudget: sized.budget,
     limitedBy: sized.limitedBy,
+    curatorFee: appliedCuratorFee(input.plan, input.builderApproval),
   };
 }

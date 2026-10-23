@@ -45,6 +45,7 @@ describe("a plan that fits the account and the book", () => {
           exitFee: "0.54",
           stopSlippageReserve: "5.35",
           fundingReserve: "1.12",
+          curatorFee: "0.00",
         },
         plannedLoss: "20.00",
         rewardRiskNet: "1.63",
@@ -53,6 +54,7 @@ describe("a plan that fits the account and the book", () => {
         estimatedLiquidationPrice: "67605",
         admissibleBudget: "20.00",
         limitedBy: "budget",
+        curatorFee: null,
       },
       evidence: {
         bestBid: "83999",

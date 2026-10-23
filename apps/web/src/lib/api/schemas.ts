@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  curatorFeeSchema,
   decimalStringSchema,
   decisionOutcomes,
   environments,
@@ -27,6 +28,7 @@ const proposalSchema: z.ZodType<Proposal> = z.object({
     exitFee: decimal,
     stopSlippageReserve: decimal,
     fundingReserve: decimal,
+    curatorFee: decimal.default("0"),
   }),
   plannedLoss: decimal,
   rewardRiskNet: decimal,
@@ -35,6 +37,7 @@ const proposalSchema: z.ZodType<Proposal> = z.object({
   estimatedLiquidationPrice: decimal,
   admissibleBudget: decimal,
   limitedBy: z.enum(limitingFactors),
+  curatorFee: curatorFeeSchema.nullable().default(null),
 });
 
 const evidenceSchema: z.ZodType<DecisionEvidence> = z.object({

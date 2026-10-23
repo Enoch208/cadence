@@ -115,6 +115,7 @@ export function generatedInput(random: Random, profile: Profile): DecisionInput 
       symbolSettings: isolatedSettings(leverage),
     },
     accountReconciled: !random.chance(0.03),
+    builderApproval: null,
     exposure: {
       busySymbols: random.chance(0.04) ? ["BTC-USD"] : [],
       knownClientOrderIds: [],

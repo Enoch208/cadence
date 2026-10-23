@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { DecimalString, DecisionInput, RiskPolicy } from "@cadence/core";
 import {
+  builderApprovalOf,
   CredentialVaultError,
   executionIntents,
   loadExposure,
@@ -76,6 +77,7 @@ export async function gatherDecisionInput(
     }),
     accountState: snapshot.accountState,
     accountReconciled: await accountReconciled(deps.db, account.id),
+    builderApproval: builderApprovalOf(account),
     exposure: await loadExposure(deps.db, account.id, now),
     market: snapshot.market,
     book: snapshot.book,

@@ -1,11 +1,12 @@
 import { Decimal } from "decimal.js";
 import { describe, expect, it } from "vitest";
-import { decisionOutcomes } from "../src/contract";
+import { curatorFeeMaxBps, decisionOutcomes } from "../src/contract";
 import { admissibleBudget, perUnitLoss } from "../src/costs";
 import { decide } from "../src/decide";
 import type { Decision, DecisionInput, Proposal } from "../src/decision";
 import { floorToGrid, floorToStep } from "../src/grid";
 import { executablePrice, fillableSize, withinPriceBounds } from "../src/pricing";
+import { curatorFeeRateFor } from "../src/sizing";
 import { generatedInput, mirrored, units, type Profile } from "./fixtures/generated";
 import { budgetCuts, withWorseQuote } from "./fixtures/transforms";
 import { seededRandom } from "./support/random";
@@ -83,6 +84,34 @@ describe("decide properties over generated inputs", () => {
     }
   });
 
+  it("never increases the quantity for a curator fee, or for a higher one", () => {
+    const random = seededRandom(9);
+    let charged = 0;
+    for (const input of generated(9, realistic)) {
+      const feeBps = random.integer(1, curatorFeeMaxBps - 1);
+      const higher = feeBps + random.integer(1, curatorFeeMaxBps - feeBps);
+      const withFee = (bps: number): DecisionInput => ({
+        ...input,
+        plan: { ...input.plan, curatorFee: { builderCode: "range_traders", feeBps: bps } },
+        builderApproval: { builderCode: "range_traders", maxFeeBps: curatorFeeMaxBps },
+      });
+      const free = quantityOrZero(decide(input));
+      const lower = quantityOrZero(decide(withFee(feeBps)));
+      const pricier = quantityOrZero(decide(withFee(higher)));
+      expect(lower.lessThanOrEqualTo(free)).toBe(true);
+      expect(pricier.lessThanOrEqualTo(lower)).toBe(true);
+      const proposal = proposalOf(decide(withFee(feeBps)));
+      if (proposal !== null) {
+        charged += 1;
+        expect(proposal.curatorFee).toEqual({ builderCode: "range_traders", feeBps });
+        expect(new Decimal(proposal.plannedLoss).lessThanOrEqualTo(proposal.admissibleBudget)).toBe(
+          true,
+        );
+      }
+    }
+    expect(charged).toBeGreaterThanOrEqual(20);
+  });
+
   it("never plans a loss beyond the admissible budget, and never understates it", () => {
     for (const input of generated(5, realistic)) {
       const proposal = proposalOf(decide(input));
@@ -96,6 +125,7 @@ describe("decide properties over generated inputs", () => {
         fees: input.fees,
         policy: input.policy,
         mark: input.mark,
+        curatorFeeRate: curatorFeeRateFor(input),
       });
       const exactLoss = new Decimal(proposal.quantity).times(perUnit.total);
       const budget = admissibleBudget(input);

@@ -22,6 +22,7 @@ export const longInput = (): DecisionInput => ({
   quantityCeiling: null,
   accountState: accountWith("1000", fixtureNow),
   accountReconciled: true,
+  builderApproval: null,
   exposure: {
     busySymbols: [],
     knownClientOrderIds: [],

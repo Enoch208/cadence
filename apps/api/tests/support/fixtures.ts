@@ -54,6 +54,7 @@ export const readyProposal: Proposal = {
     exitFee: "0.50",
     stopSlippageReserve: "5.03",
     fundingReserve: "1.05",
+    curatorFee: "0.00",
   },
   plannedLoss: "19.99",
   rewardRiskNet: "1.48",
@@ -62,6 +63,7 @@ export const readyProposal: Proposal = {
   estimatedLiquidationPrice: "67684",
   admissibleBudget: "20.00",
   limitedBy: "budget",
+  curatorFee: null,
 };
 
 export const readyDecision: Decision = {

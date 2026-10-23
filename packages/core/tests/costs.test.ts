@@ -29,6 +29,7 @@ describe("perUnitLoss", () => {
         fees: takerFees,
         policy: defaultPolicy,
         mark: capturedMark,
+        curatorFeeRate: 0,
       }),
     ).toEqual({
       priceLoss: "1200",
@@ -36,13 +37,20 @@ describe("perUnitLoss", () => {
       exitFee: "41.6",
       stopSlippageReserve: "416",
       fundingReserve: "86.92168313805747648",
+      curatorFee: "0",
       total: "1786.72168313805747648",
     });
   });
 
   it("reserves funding whichever way the rate points", () => {
     const paying = markAt("84400", fixtureNow, "0.0000429115734291358");
-    const args = { direction: "long", entry: "84400", stop: "83200", fees: takerFees } as const;
+    const args = {
+      direction: "long",
+      entry: "84400",
+      stop: "83200",
+      fees: takerFees,
+      curatorFeeRate: 0,
+    } as const;
     expect(perUnitLoss({ ...args, policy: defaultPolicy, mark: paying }).fundingReserve).toBe(
       perUnitLoss({ ...args, policy: defaultPolicy, mark: capturedMark }).fundingReserve,
     );
@@ -56,11 +64,26 @@ describe("perUnitLoss", () => {
       fees: takerFees,
       policy: defaultPolicy,
       mark: capturedMark,
+      curatorFeeRate: 0,
     });
     expect(loss.priceLoss).toBe("1200");
     expect(loss.entryFee).toBe("42");
     expect(loss.exitFee).toBe("42.6");
     expect(loss.stopSlippageReserve).toBe("426");
+  });
+
+  it("charges a curator fee on the entry fill and on the stop fill", () => {
+    const loss = perUnitLoss({
+      direction: "long",
+      entry: "84400",
+      stop: "83200",
+      fees: takerFees,
+      policy: defaultPolicy,
+      mark: capturedMark,
+      curatorFeeRate: "0.0005",
+    });
+    expect(loss.curatorFee).toBe("83.8");
+    expect(loss.total).toBe("1870.52168313805747648");
   });
 
   it("refuses an entry already beyond its stop", () => {
@@ -72,6 +95,7 @@ describe("perUnitLoss", () => {
         fees: takerFees,
         policy: defaultPolicy,
         mark: capturedMark,
+        curatorFeeRate: 0,
       }),
     ).toThrow(RangeError);
   });

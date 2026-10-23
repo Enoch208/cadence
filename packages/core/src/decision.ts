@@ -1,5 +1,12 @@
 import type { AccountState } from "./account";
-import type { DecimalString, DecisionOutcome, LimitingFactor, ReasonCode } from "./contract";
+import type {
+  CuratorFee,
+  DecimalString,
+  DecisionOutcome,
+  LimitingFactor,
+  ReasonCode,
+} from "./contract";
+import type { BuilderApproval } from "./curator-fee";
 import type { BookSnapshot, FeeSchedule, MarketRules, MarkSnapshot } from "./market";
 import type { PublishedPlan } from "./plan";
 import type { RiskPolicy } from "./policy";
@@ -23,6 +30,7 @@ export type DecisionInput = {
   quantityCeiling: DecimalString | null;
   accountState: AccountState;
   accountReconciled: boolean;
+  builderApproval: BuilderApproval | null;
   exposure: CadenceExposure;
   market: MarketRules;
   book: BookSnapshot;
@@ -36,6 +44,7 @@ export type CostBreakdown = {
   exitFee: DecimalString;
   stopSlippageReserve: DecimalString;
   fundingReserve: DecimalString;
+  curatorFee: DecimalString;
 };
 
 export type Proposal = {
@@ -51,6 +60,7 @@ export type Proposal = {
   estimatedLiquidationPrice: DecimalString;
   admissibleBudget: DecimalString;
   limitedBy: LimitingFactor;
+  curatorFee: CuratorFee | null;
 };
 
 export type DecisionEvidence = {
