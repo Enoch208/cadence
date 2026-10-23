@@ -9,10 +9,10 @@ member can take on Strike at a size that fits their own account, as one bounded 
 native stop and target attached, or be told in plain words why they should not. Every fill, exit
 and close is reconciled against Strike's own records, and the receipt is built from the fills.
 
-[![Cadence demo video](docs/demo-poster.jpg)](https://cadencetrade.xyz/demo.mp4)
+[![Cadence demo video](docs/demo-poster.jpg)](https://youtu.be/T2OdM5DFgmE)
 
-- **Demo video (2:28):** https://cadencetrade.xyz/demo.mp4 (full quality in the
-  [release](https://github.com/Enoch208/cadence/releases/tag/demo-2026-10-23))
+- **Demo video (2:28):** https://youtu.be/T2OdM5DFgmE (also at https://cadencetrade.xyz/demo.mp4,
+  and full quality in the [release](https://github.com/Enoch208/cadence/releases/tag/demo-2026-10-23))
 - **Live app:** https://cadencetrade.xyz
 - **Try it with no money:** the practice plan https://cadencetrade.xyz/p/83c3e2p5dgkw, open until
   26 Oct 20:00 UTC
