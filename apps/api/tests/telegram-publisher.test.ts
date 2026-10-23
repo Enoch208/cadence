@@ -19,11 +19,12 @@ function telegramServer(reply: (method: string) => { status: number; body: unkno
 const message = { message_id: 77, date: 0, chat: { id: -1001234567890, type: "supergroup" } };
 
 describe("the grammY Telegram publisher", () => {
-  it("sends the card as plain text with one URL button", async () => {
+  it("sends the card as plain text with a bold first line and one URL button", async () => {
     const server = telegramServer(() => ({ status: 200, body: { ok: true, result: message } }));
     const result = await createGrammyPublisher(server.api).postPlanCard({
       chatId: "-1001234567890",
-      text: "BTC-USD long",
+      text: "BTC-USD long\nEntry",
+      boldLength: 12,
       button: { label: "Preview for me", url: "https://cadence.test/p/abc" },
     });
     expect(result).toEqual({ messageId: 77 });
@@ -32,7 +33,8 @@ describe("the grammY Telegram publisher", () => {
     expect(sent?.method).toBe("sendMessage");
     expect(sent?.body).toMatchObject({
       chat_id: "-1001234567890",
-      text: "BTC-USD long",
+      text: "BTC-USD long\nEntry",
+      entities: [{ type: "bold", offset: 0, length: 12 }],
       reply_markup: {
         inline_keyboard: [[{ text: "Preview for me", url: "https://cadence.test/p/abc" }]],
       },

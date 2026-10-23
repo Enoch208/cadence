@@ -26,10 +26,10 @@ describe("publishing", () => {
       label: "Preview for me",
       url: `${testEnv.PUBLIC_WEB_ORIGIN}/p/${draft.publicId}`,
     });
-    for (const fragment of ["BTC-USD long", "84000 to 84400", "Stop 83200", "Target 86800"]) {
+    for (const fragment of ["BTC-USD long", "84,000 – 84,400", "Stop 83,200", "Target 86,800"]) {
       expect(card?.text).toContain(fragment);
     }
-    expect(card?.text).toContain("2026-10-23 18:00 UTC");
+    expect(card?.text).toContain("23 Oct, 18:00 UTC");
     expect(card?.text).not.toContain("Replay");
   });
 

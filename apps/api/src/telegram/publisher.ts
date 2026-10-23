@@ -3,6 +3,7 @@ import { GrammyError, InlineKeyboard, type Api } from "grammy";
 export type PlanCard = {
   chatId: string;
   text: string;
+  boldLength: number;
   button: { label: string; url: string };
 };
 
@@ -29,6 +30,7 @@ export function createGrammyPublisher(api: Api): TelegramPublisher {
     },
     async postPlanCard(card) {
       const message = await api.sendMessage(card.chatId, card.text, {
+        entities: [{ type: "bold", offset: 0, length: card.boldLength }],
         reply_markup: new InlineKeyboard().url(card.button.label, card.button.url),
         link_preview_options: { is_disabled: true },
       });
