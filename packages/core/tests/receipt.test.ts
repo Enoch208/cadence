@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ExchangeFill, ExchangeOrderSnapshot } from "../src/account";
 import type { IntentState, OrderSide } from "../src/contract";
 import { decide } from "../src/decide";
+import type { Decision, Proposal } from "../src/decision";
 import { planVersionDigest } from "../src/digest";
 import { clientOrderIdFor } from "../src/identity";
 import { buildReceipt, type ReceiptInput } from "../src/receipt";
@@ -163,6 +164,46 @@ describe("buildReceipt", () => {
       fill("2", "sell", "86800", "0.01666", "0.723044"),
     ]);
     expect(receipt.exchangeOrderIds).toEqual(["order-entry", "order-1", "order-2"]);
+  });
+
+  it("computes the curator fee from the fills it was charged on and nets it from the result", () => {
+    const curatorFee = { builderCode: "range_traders", feeBps: 5 };
+    const decision = decide({
+      ...longInput(),
+      plan: { ...longPlan, curatorFee },
+      builderApproval: { builderCode: "range_traders", maxFeeBps: 5 },
+    });
+    const recoveryFill: ExchangeFill = {
+      ...fill("3", "sell", "86800", "0.00666", "0.289044"),
+      clientOrderId: clientOrderIdFor(intentId, "recovery_close"),
+    };
+    const receipt = receiptFor(
+      "closed",
+      [boughtAtEntry, fill("2", "sell", "86800", "0.01", "0.434"), recoveryFill],
+      { decision, plan: { ...longPlan, curatorFee } },
+    );
+    expect(receipt.curatorFee).toEqual({ ...curatorFee, computedCharge: "1.13" });
+    expect(receipt.feesPaid).toBe("1.42452996");
+    expect(receipt.realizedPnl).toBe("40.56155004");
+    expect(receiptFor("closed", [boughtAtEntry]).curatorFee).toBeNull();
+  });
+
+  it("reads an approval stored before curator fees existed as having none", () => {
+    if (readyDecision.outcome === "BLOCKED") {
+      throw new Error("The fixture decision should be admitted");
+    }
+    const stored: Partial<Proposal> = { ...readyDecision.proposal };
+    delete stored.curatorFee;
+    const legacy: Decision = { ...readyDecision, proposal: stored as Proposal };
+    const receipt = receiptFor(
+      "closed",
+      [boughtAtEntry, fill("2", "sell", "86800", "0.01666", "0.723044")],
+      {
+        decision: legacy,
+      },
+    );
+    expect(receipt.curatorFee).toBeNull();
+    expect(receipt.realizedPnl).toBe("41.69155004");
   });
 
   it("records no approved proposal for a blocked decision", () => {

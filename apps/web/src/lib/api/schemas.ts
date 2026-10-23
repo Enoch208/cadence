@@ -194,6 +194,7 @@ const receiptSchema: z.ZodType<Receipt> = z.object({
   entry: filledLeg.nullable(),
   exit: filledLeg.nullable(),
   feesPaid: decimal,
+  curatorFee: curatorFeeSchema.extend({ computedCharge: decimal }).nullable().default(null),
   realizedPnl: decimal.nullable(),
   exchangeOrderIds: z.array(z.string()),
   incomplete: z.array(z.string()),

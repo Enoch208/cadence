@@ -130,7 +130,11 @@ function expect2xx(reply: Reply, what: string): Reply {
   return reply;
 }
 
-export async function publishReplayPlan(app: CadenceApi, clock: TestClock): Promise<string> {
+export async function publishReplayPlan(
+  app: CadenceApi,
+  clock: TestClock,
+  terms: Record<string, unknown> = {},
+): Promise<string> {
   const cookie = await signIn(app, clock, curator);
   const community = expect2xx(
     await call(app, "POST", "/api/communities", {
@@ -151,6 +155,7 @@ export async function publishReplayPlan(app: CadenceApi, clock: TestClock): Prom
     entryExpiresAt: "2026-10-23T18:00:00Z",
     rationale: "Reclaim of the weekly open with a stop under the range low.",
     environment: "replay",
+    ...terms,
   };
   const draft = expect2xx(
     await call(app, "POST", "/api/plans", {
@@ -168,11 +173,16 @@ export async function publishReplayPlan(app: CadenceApi, clock: TestClock): Prom
 
 let nextMember = 3000;
 
-export async function replayMember(app: CadenceApi, clock: TestClock, scenario: string) {
+export async function replayMember(
+  app: CadenceApi,
+  clock: TestClock,
+  scenario: string,
+  forPlan: { planPublicId: string } | Record<string, never> = {},
+) {
   nextMember += 1;
   const cookie = await signIn(app, clock, { id: nextMember, first_name: "Tobi" });
   const account = expect2xx(
-    await call(app, "POST", "/api/accounts/replay", { cookie, body: { scenario } }),
+    await call(app, "POST", "/api/accounts/replay", { cookie, body: { scenario, ...forPlan } }),
     "Connecting the replay account",
   ).body as { id: string };
   return { cookie, accountId: account.id };

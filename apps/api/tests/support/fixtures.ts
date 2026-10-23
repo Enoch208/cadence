@@ -92,6 +92,7 @@ export const receiptBody = (intentId: string, realizedPnl: string | null): Recei
   entry: { size: "0.01208", averagePrice: "84212" },
   exit: { size: "0.01208", averagePrice: "83200" },
   feesPaid: "1.01",
+  curatorFee: null,
   realizedPnl,
   exchangeOrderIds: ["1000001", "1000004"],
   incomplete: realizedPnl === null ? ["exit fills"] : [],
