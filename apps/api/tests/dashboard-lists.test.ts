@@ -146,6 +146,8 @@ describe("a curator's plans", () => {
           entryExpiresAt: "2026-10-23T20:00:00Z",
           communityName: "Range Traders",
           funnel: { previewed: 0, couldTake: 0, approved: 0, filled: 0 },
+          curatorFee: null,
+          curatorFeesEarned: { computed: "0.00", fills: 0 },
         },
         {
           id: published.id,
@@ -158,6 +160,8 @@ describe("a curator's plans", () => {
           entryExpiresAt: "2026-10-23T18:00:00Z",
           communityName: "Range Traders",
           funnel: { previewed: 0, couldTake: 0, approved: 0, filled: 0 },
+          curatorFee: null,
+          curatorFeesEarned: { computed: "0.00", fills: 0 },
         },
       ],
     });
