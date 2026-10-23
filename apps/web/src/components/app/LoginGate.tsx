@@ -47,7 +47,7 @@ function TelegramSignIn({ onSignedIn }: { onSignedIn: () => void }) {
       }
       if (widget.current && telegramBotUsername !== null) {
         await mountLoginWidget(widget.current, telegramBotUsername, (fields) => {
-          void submit("/api/auth/telegram/widget", { fields });
+          void submit("/api/auth/telegram/widget", fields);
         });
         return;
       }
