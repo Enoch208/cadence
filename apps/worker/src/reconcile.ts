@@ -3,13 +3,14 @@ import { clientOrderIdFor, type ExchangeOrderSnapshot, type IntentState } from "
 import type { ExchangeOrderRow, Tx } from "@cadence/db";
 import type { WorkerDeps } from "./deps";
 import { entryVerdict } from "./entry-verdict";
-import { heldPosition, summarizeExits, type LegExpectation } from "./exits";
+import { cancelLeftoverExits } from "./close-position";
+import { heldPosition, isLive, summarizeExits, type LegExpectation } from "./exits";
 import { attributeFills, fillFacts, storeFills, type AttributedFill } from "./fills";
 import { intentRef, loadIntentContext, type IntentContext } from "./intent-context";
 import { pauseConnection } from "./ledger";
 import { milestones, observe, type Milestones, type Observation } from "./observation";
 import { openVerdict, type OpenState } from "./open-verdict";
-import { loadOrderRows, recordSnapshot } from "./order-rows";
+import { loadOrderRows, recordSnapshot, rowFor } from "./order-rows";
 import { recover, type RecoveryInput } from "./recovery";
 import { applySteps, type Step } from "./settle";
 import { intentCursor, lockIntentState } from "./transition";
@@ -34,7 +35,11 @@ type Pass = {
   at: number;
 };
 
-type Judgment = { state: IntentState; recovery: RecoveryInput | null };
+type Judgment = {
+  state: IntentState;
+  recovery: RecoveryInput | null;
+  leftoverExits: readonly string[];
+};
 
 function traced(pass: Pass): boolean {
   const { account } = pass.observation;
@@ -94,7 +99,7 @@ async function judge(tx: Tx, pass: Pass): Promise<Judgment> {
   const { context, observation, at } = pass;
   const locked = await lockIntentState(tx, context.intent.id);
   if (locked !== context.intent.state) {
-    return { state: locked ?? context.intent.state, recovery: null };
+    return { state: locked ?? context.intent.state, recovery: null, leftoverExits: [] };
   }
   const entry = observation.orders.get("entry") ?? entryFromFills(pass);
   for (const row of pass.rows) {
@@ -129,7 +134,7 @@ async function judge(tx: Tx, pass: Pass): Promise<Judgment> {
     }
   }
   if (!isOpenState(cursor.state)) {
-    return { state: cursor.state, recovery: null };
+    return { state: cursor.state, recovery: null, leftoverExits: [] };
   }
   const buying = context.plan.direction === "long";
   const signedSize =
@@ -137,12 +142,16 @@ async function judge(tx: Tx, pass: Pass): Promise<Judgment> {
       ?.signedSize ?? "0";
   const position = heldPosition(signedSize, buying);
   const facts = fillFacts(observation.fills, pass.ours, buying ? "buy" : "sell");
+  const closing = rowFor(pass.rows, "close") !== null;
+  const legs = legsOf(pass);
   const verdict = openVerdict({
     state: cursor.state,
     positionSize: position.size,
     oppositePosition: position.opposite,
-    exits: summarizeExits(legsOf(pass), position.size),
+    exits: summarizeExits(legs, position.size),
     flatByFills: facts.flatByFills,
+    closing,
+    openSize: facts.openSize,
     sinceFillMs: at - (pass.times.filledAt ?? at),
   });
   await apply(verdict.steps);
@@ -150,7 +159,12 @@ async function judge(tx: Tx, pass: Pass): Promise<Judgment> {
     await pause("the account holds a position opposite to this plan");
   }
   const recovering = verdict.recover && cursor.state === "recovery_required";
+  const flat = new Decimal(position.size).isZero() && !position.opposite;
   return {
+    leftoverExits:
+      closing && flat
+        ? legs.flatMap(({ leg }) => (leg !== null && isLive(leg) ? [leg.clientOrderId] : []))
+        : [],
     state: cursor.state,
     recovery: recovering
       ? {
@@ -190,6 +204,9 @@ export async function reconcileIntent(deps: WorkerDeps, intentId: string): Promi
   const judgment = await deps.db.transaction((tx) => judge(tx, pass));
   if (judgment.recovery !== null) {
     await recover(deps, client, judgment.recovery);
+  }
+  if (judgment.leftoverExits.length > 0) {
+    await cancelLeftoverExits(deps, client, context, judgment.leftoverExits);
   }
   return judgment.state;
 }

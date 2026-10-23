@@ -29,6 +29,13 @@
       "when": 1792677165246,
       "tag": "0003_telegram_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792729889856,
+      "tag": "0004_close_position",
+      "breakpoints": true
     }
   ]
 }

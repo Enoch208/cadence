@@ -5,6 +5,7 @@ import type { AppDeps, AppEnv } from "../deps";
 import { readBody } from "../http/body";
 import { uuidParam } from "../http/params";
 import { approvePreview } from "../intents/approve";
+import { requestClose } from "../intents/close";
 import { listIntents } from "../intents/list";
 import { intentView, receiptView, requestEntryCancel } from "../intents/read";
 
@@ -28,6 +29,10 @@ export function intentRoutes(deps: AppDeps) {
     .post("/intents/:id/cancel-entry", signedIn, async (c) => {
       const intentId = uuidParam(c, "id", missingIntent);
       return c.json(await requestEntryCancel(deps, c.get("userId"), intentId), 202);
+    })
+    .post("/intents/:id/close", signedIn, async (c) => {
+      const intentId = uuidParam(c, "id", missingIntent);
+      return c.json(await requestClose(deps, c.get("userId"), intentId), 202);
     })
     .get("/receipts/:intentId", signedIn, async (c) => {
       const intentId = uuidParam(c, "intentId", missingIntent);

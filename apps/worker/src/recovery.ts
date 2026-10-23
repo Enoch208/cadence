@@ -8,7 +8,7 @@ import { isLive } from "./exits";
 import type { IntentContext } from "./intent-context";
 import { pauseConnection } from "./ledger";
 import type { Observation } from "./observation";
-import { recoveryRow, rowFor } from "./order-rows";
+import { closingRow, rowFor } from "./order-rows";
 import { lockIntentState } from "./transition";
 
 export type RecoveryInput = {
@@ -50,7 +50,7 @@ function persistClose(deps: WorkerDeps, context: IntentContext, close: ReduceOnl
     }
     const inserted = await tx
       .insert(exchangeOrders)
-      .values(recoveryRow(context.intent.id, close))
+      .values(closingRow(context.intent.id, "recovery_close", close))
       .onConflictDoNothing()
       .returning({ id: exchangeOrders.id });
     if (inserted.length === 0) {

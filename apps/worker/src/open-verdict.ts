@@ -15,6 +15,8 @@ export type OpenEvidence = {
   oppositePosition: boolean;
   exits: ExitsSummary;
   flatByFills: boolean;
+  closing: boolean;
+  openSize: DecimalString;
   sinceFillMs: number;
 };
 
@@ -40,7 +42,8 @@ export function openVerdict(evidence: OpenEvidence): OpenVerdict {
   }
   const held = new Decimal(positionSize).greaterThan(0);
   if (!held) {
-    if (exits.live || !evidence.flatByFills) {
+    const closeUnattributed = evidence.closing && new Decimal(evidence.openSize).greaterThan(0);
+    if (exits.live || !evidence.flatByFills || closeUnattributed) {
       return hold();
     }
     const data = { positionSize };

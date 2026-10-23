@@ -147,6 +147,8 @@ describe("judging an open position", () => {
     oppositePosition: false,
     exits: armed,
     flatByFills: false,
+    closing: false,
+    openSize: "0.012",
     sinceFillMs: 0,
   };
 
@@ -188,6 +190,14 @@ describe("judging an open position", () => {
     expect(events(openVerdict({ ...recovered, exits: missing, flatByFills: true }).steps)).toEqual([
       "recovery_confirmed",
     ]);
+  });
+
+  it("holds a member's close open until its fill is attributed, so the receipt is complete", () => {
+    const flat = { ...base, state: "open_verified" as const, positionSize: "0", flatByFills: true };
+    const closing = { ...flat, exits: missing, closing: true };
+    expect(openVerdict({ ...closing, openSize: "0.012" }).steps).toEqual([]);
+    expect(events(openVerdict({ ...closing, openSize: "0" }).steps)).toEqual(["close_reconciled"]);
+    expect(openVerdict({ ...closing, exits: armed, openSize: "0" }).steps).toEqual([]);
   });
 
   it("touches nothing and pauses new entries when the position runs the other way", () => {

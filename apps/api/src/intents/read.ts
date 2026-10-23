@@ -16,7 +16,7 @@ import { conflict, notFound } from "../http/errors";
 
 const missingIntent = () => notFound("That intent does not exist.");
 
-async function ownedIntent(db: Executor, userId: string, intentId: string, lock = false) {
+export async function ownedIntent(db: Executor, userId: string, intentId: string, lock = false) {
   const query = db
     .select()
     .from(executionIntents)

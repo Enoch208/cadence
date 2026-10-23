@@ -2,6 +2,7 @@ import { and, asc, eq, gt, inArray, notExists } from "drizzle-orm";
 import type { IntentState } from "@cadence/core";
 import { executionIntents, outbox, type Db } from "@cadence/db";
 import { cancelEntry } from "./cancel-entry";
+import { closePosition } from "./close-position";
 import { disconnectForRefusedKey, isCredentialFailure } from "./credentials";
 import type { WorkerDeps } from "./deps";
 import { logFailure, logLine } from "./log";
@@ -33,6 +34,8 @@ async function handle(deps: WorkerDeps, item: OutboxItem): Promise<string> {
       return reconcileIntent(deps, item.intentId);
     case "cancel_entry":
       return cancelEntry(deps, item.intentId);
+    case "close_position":
+      return closePosition(deps, item.intentId);
   }
 }
 

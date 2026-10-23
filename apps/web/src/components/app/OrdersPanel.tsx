@@ -9,6 +9,7 @@ const roleLabel = {
   stop: "Stop",
   target: "Target",
   recovery_close: "Recovery close",
+  close: "Your close",
 } as const;
 
 function describe(order: IntentView["orders"][number]): string {

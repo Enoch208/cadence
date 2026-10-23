@@ -77,6 +77,34 @@ describe("cancelling an unfilled entry", () => {
   });
 });
 
+describe("closing an open position", () => {
+  it("queues one close for an open position however often it is asked", async () => {
+    const { app, cookie, intentId } = await approvedIntent();
+    await db.update(executionIntents).set({ state: "open_verified" });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      expect(await call(app, "POST", `/api/intents/${intentId}/close`, { cookie })).toMatchObject({
+        status: 202,
+        body: { id: intentId },
+      });
+    }
+    const queued = await db.select().from(outbox).where(eq(outbox.kind, "close_position"));
+    expect(queued).toMatchObject([{ intentId, status: "pending" }]);
+  });
+
+  it("refuses while nothing is open, and treats another member's intent as missing", async () => {
+    const { app, cookie, intentId } = await approvedIntent();
+    expect(await call(app, "POST", `/api/intents/${intentId}/close`, { cookie })).toMatchObject({
+      status: 409,
+      body: { code: "NOTHING_TO_CLOSE" },
+    });
+    await db.update(executionIntents).set({ state: "open_verified" });
+    const other = await signIn(app, curator);
+    expect(
+      await call(app, "POST", `/api/intents/${intentId}/close`, { cookie: other }),
+    ).toMatchObject({ status: 404, body: { code: "NOT_FOUND" } });
+  });
+});
+
 describe("receipts", () => {
   it("answers not ready until the worker has built the receipt", async () => {
     const { app, cookie, intentId } = await approvedIntent();

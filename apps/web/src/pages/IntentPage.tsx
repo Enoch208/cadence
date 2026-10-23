@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { terminalIntentStates, type IntentState } from "@cadence/core";
 import { AppShell, Panel } from "@/components/app/AppShell";
+import { ClosePosition } from "@/components/app/ClosePosition";
 import { EnvironmentBadge } from "@/components/app/EnvironmentBadge";
 import { IntentTimeline } from "@/components/app/IntentTimeline";
 import { LoginGate } from "@/components/app/LoginGate";
@@ -68,6 +69,7 @@ function IntentDetail({ intentId }: { intentId: string }) {
           <EnvironmentBadge environment={intent.environment} />
         </div>
         <IntentTimeline state={intent.state} environment={intent.environment} />
+        <ClosePosition intent={intent} />
         {problem !== null ? <Problem title="Status is not refreshing">{problem}</Problem> : null}
       </Panel>
       <Panel>

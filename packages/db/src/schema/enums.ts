@@ -20,7 +20,7 @@ export type CredentialSource = (typeof credentialSources)[number];
 export const reservationStatuses = ["active", "released"] as const;
 export type ReservationStatus = (typeof reservationStatuses)[number];
 
-export const outboxKinds = ["submit", "reconcile", "cancel_entry"] as const;
+export const outboxKinds = ["submit", "reconcile", "cancel_entry", "close_position"] as const;
 export type OutboxKind = (typeof outboxKinds)[number];
 
 export const outboxStatuses = ["pending", "claimed", "done"] as const;

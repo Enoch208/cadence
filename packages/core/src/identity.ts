@@ -5,6 +5,7 @@ const roleCodes: Record<OrderRole, string> = {
   stop: "s",
   target: "t",
   recovery_close: "r",
+  close: "c",
 };
 
 export const strategyIdFor = (intentId: string) => `cad-${intentId}`;

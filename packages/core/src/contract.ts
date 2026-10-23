@@ -50,7 +50,7 @@ export const intentStates = [
 ] as const;
 export type IntentState = (typeof intentStates)[number];
 
-export const orderRoles = ["entry", "stop", "target", "recovery_close"] as const;
+export const orderRoles = ["entry", "stop", "target", "recovery_close", "close"] as const;
 export type OrderRole = (typeof orderRoles)[number];
 
 export const intentEvents = [

@@ -15,7 +15,8 @@ import { rowFor } from "./order-rows";
 export const fillLookbackMs = 60_000;
 
 const openStates: readonly IntentState[] = ["open_verifying", "open_verified", "recovery_required"];
-const followUpRoles: readonly OrderRole[] = ["stop", "target", "recovery_close"];
+const followUpRoles: readonly OrderRole[] = ["stop", "target", "recovery_close", "close"];
+const closingRoles: readonly OrderRole[] = ["recovery_close", "close"];
 
 export type Observation = {
   account: AccountState;
@@ -46,7 +47,7 @@ export async function observe(
         return null;
       }
       const open = account.openOrders.find((order) => order.clientOrderId === row.clientOrderId);
-      const lookUp = role === "recovery_close" || entered || openStates.includes(state);
+      const lookUp = closingRoles.includes(role) || entered || openStates.includes(state);
       const snapshot = open ?? (lookUp ? await client.order(market, row.clientOrderId) : null);
       return snapshot === null ? null : ([role, snapshot] as const);
     }),

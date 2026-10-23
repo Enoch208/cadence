@@ -41,11 +41,15 @@ export function strategyRows(intentId: string, order: StrategyOrder): NewOrderRo
   }));
 }
 
-export function recoveryRow(intentId: string, close: ReduceOnlyClose): NewOrderRow {
+export function closingRow(
+  intentId: string,
+  role: "recovery_close" | "close",
+  close: ReduceOnlyClose,
+): NewOrderRow {
   const payload = reduceOnlyCloseBody(close);
   return {
     intentId,
-    role: "recovery_close",
+    role,
     clientOrderId: close.clientOrderId,
     payload,
     payloadDigest: digestOf(payload),
