@@ -1,4 +1,5 @@
 import type { Environment } from "@cadence/core";
+import { Decimal } from "decimal.js";
 import { TicketRows } from "@/components/ui/Ticket";
 import type { IntentView } from "@/lib/api/schemas";
 import { venueName } from "@/lib/copy/states";
@@ -16,7 +17,8 @@ function describe(order: IntentView["orders"][number]): string {
       ? "Not seen yet"
       : `${order.lastStatus.charAt(0).toUpperCase()}${order.lastStatus.slice(1)}`;
   const reference = order.exchangeOrderId === null ? "" : ` · order ${order.exchangeOrderId}`;
-  const filled = /^0(\.0+)?$/.test(order.filledSize) ? "" : ` · ${order.filledSize} filled`;
+  const size = new Decimal(order.filledSize);
+  const filled = size.isZero() ? "" : ` · ${size.toFixed()} filled`;
   return `${status}${filled}${reference}`;
 }
 
