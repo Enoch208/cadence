@@ -10,7 +10,9 @@ import { eventTypes, intentState, lastEventData, orderRowsOf, receiptOf } from "
 
 resetDatabaseBetweenTests();
 
-function recording(keepLegsLive: boolean) {
+type LegLookup = "fresh" | "live_until_canceled" | "stale";
+
+function recording(legs: LegLookup) {
   const closes: string[] = [];
   const cancels: string[] = [];
   const isLeg = (clientOrderId: string) => /-[st]$/.test(clientOrderId);
@@ -26,7 +28,9 @@ function recording(keepLegsLive: boolean) {
     },
     order: async (symbol, clientOrderId) => {
       const order = await replay.order(symbol, clientOrderId);
-      const leftLive = keepLegsLive && isLeg(clientOrderId) && !cancels.includes(clientOrderId);
+      const leftLive =
+        isLeg(clientOrderId) &&
+        (legs === "stale" || (legs === "live_until_canceled" && !cancels.includes(clientOrderId)));
       return order !== null && leftLive
         ? { ...order, status: "untriggered", closeReason: null }
         : order;
@@ -35,8 +39,8 @@ function recording(keepLegsLive: boolean) {
   return { closes, cancels, wrap };
 }
 
-async function openPosition(keepLegsLive = false) {
-  const { closes, cancels, wrap } = recording(keepLegsLive);
+async function openPosition(legs: LegLookup = "fresh") {
+  const { closes, cancels, wrap } = recording(legs);
   const setup = await approved({ client: wrap });
   await submitIntent(setup.deps, setup.intent.id);
   await reconcileIntent(setup.deps, setup.intent.id);
@@ -81,7 +85,7 @@ describe("closing a position the member wants out of", () => {
   });
 
   it("cancels a stop and target the exchange left live after the close, then reconciles", async () => {
-    const { intent, deps, cancels } = await openPosition(true);
+    const { intent, deps, cancels } = await openPosition("live_until_canceled");
 
     await closePosition(deps, intent.id);
     await reconcileIntent(deps, intent.id);
@@ -94,6 +98,21 @@ describe("closing a position the member wants out of", () => {
     await reconcileIntent(deps, intent.id);
     expect(await intentState(intent.id)).toBe("closed");
     expect(await receiptOf(intent.id)).toMatchObject({ state: "closed", incomplete: [] });
+  });
+
+  it("tries each leftover cancel once while a stale lookup still shows the exits live", async () => {
+    const { intent, deps, cancels } = await openPosition("stale");
+
+    await closePosition(deps, intent.id);
+    for (let pass = 0; pass < 3; pass += 1) {
+      await reconcileIntent(deps, intent.id);
+    }
+
+    expect(cancels).toEqual([
+      clientOrderIdFor(intent.id, "stop"),
+      clientOrderIdFor(intent.id, "target"),
+    ]);
+    expect(await intentState(intent.id)).toBe("open_verified");
   });
 
   it("sends nothing for an intent with no open position", async () => {

@@ -1,6 +1,8 @@
 import { Decimal } from "decimal.js";
+import { and, eq, inArray } from "drizzle-orm";
+import { z } from "zod";
 import { clientOrderIdFor, type IntentState } from "@cadence/core";
-import { exchangeOrders } from "@cadence/db";
+import { events, exchangeOrders } from "@cadence/db";
 import { StrikeRejectedError, type ReduceOnlyClose, type StrikeClient } from "@cadence/strike";
 import type { WorkerDeps } from "./deps";
 import { errorData, recordEvent, type EventData } from "./events";
@@ -119,13 +121,29 @@ export async function closePosition(deps: WorkerDeps, intentId: string): Promise
   return "close_sent";
 }
 
+const leftoverCancelEvents = ["leftover_exit_cancel_sent", "leftover_exit_cancel_rejected"];
+
+async function cancelsAlreadyTried(deps: WorkerDeps, intentId: string): Promise<Set<string>> {
+  const rows = await deps.db
+    .select({ data: events.data })
+    .from(events)
+    .where(and(eq(events.correlationId, intentId), inArray(events.type, leftoverCancelEvents)));
+  return new Set(
+    rows.flatMap(({ data }) => {
+      const id = z.object({ clientOrderId: z.string() }).safeParse(data);
+      return id.success ? [id.data.clientOrderId] : [];
+    }),
+  );
+}
+
 export async function cancelLeftoverExits(
   deps: WorkerDeps,
   client: StrikeClient,
   context: IntentContext,
   clientOrderIds: readonly string[],
 ): Promise<void> {
-  for (const clientOrderId of clientOrderIds) {
+  const tried = await cancelsAlreadyTried(deps, context.intent.id);
+  for (const clientOrderId of clientOrderIds.filter((id) => !tried.has(id))) {
     try {
       await client.cancel(context.intent.market, clientOrderId);
     } catch (error) {
