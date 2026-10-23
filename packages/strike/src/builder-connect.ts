@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { builderCodeSchema } from "@cadence/core";
 import { StrikeAmbiguousError } from "./errors";
 import { shaped } from "./live-requests";
 import { challengeResponseSchema, registeredWalletResponseSchema } from "./schemas/builder";
@@ -9,10 +10,6 @@ export type WalletChain = (typeof walletChains)[number];
 
 export const builderFeeShareBps = 0;
 export const builderChallengeLifetimeMs = 5 * 60_000;
-
-export const builderCodeSchema = z
-  .string()
-  .regex(/^[A-Za-z0-9_-]{1,64}$/, "is not a Strike builder code (1 to 64 of A-Z, 0-9, - and _)");
 
 const base58 = "[1-9A-HJ-NP-Za-km-z]";
 const hexPairs = "(?:[0-9a-fA-F]{2})";

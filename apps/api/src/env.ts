@@ -1,6 +1,5 @@
 import { Buffer } from "node:buffer";
-import { positiveDecimalSchema } from "@cadence/core";
-import { builderCodeSchema } from "@cadence/strike";
+import { builderCodeSchema, positiveDecimalSchema } from "@cadence/core";
 import { z } from "zod";
 
 const webOrigin = z

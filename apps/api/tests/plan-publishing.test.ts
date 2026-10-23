@@ -95,6 +95,21 @@ describe("publishing", () => {
     expect(recorded).toHaveLength(1);
   });
 
+  it("publishes a curator fee as part of the version members read and its digest", async () => {
+    const curatorFee = { builderCode: "range_traders", feeBps: 5 };
+    const { app, cookie, draft } = await planWithDraft({ ...planFields(), curatorFee });
+    const reply = await publish(app, cookie, draft.id);
+    const plan = publishedPlanSchema.parse({ ...planFields(), environment: "live", curatorFee });
+    expect(reply).toMatchObject({ status: 201, body: { digest: planVersionDigest(plan) } });
+    expect((await call(app, "GET", `/api/plans/${draft.publicId}`)).body).toMatchObject({
+      current: { plan: { curatorFee } },
+    });
+    const raised = await publish(app, cookie, draft.id, {
+      fields: { ...planFields(), curatorFee: { ...curatorFee, feeBps: 21 } },
+    });
+    expect(raised).toMatchObject({ status: 422, body: { code: "PLAN_INVALID" } });
+  });
+
   it("refuses to publish once the entry window has closed", async () => {
     const { cookie, draft } = await planWithDraft();
     const afterExpiry = testApp({ now: () => Date.parse("2026-10-23T18:00:00Z") });

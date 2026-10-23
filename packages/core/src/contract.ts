@@ -114,6 +114,18 @@ export const positiveDecimalSchema = z
   .brand<"PositiveDecimal">();
 export type PositiveDecimal = z.infer<typeof positiveDecimalSchema>;
 
+export const builderCodeSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{1,64}$/, "is not a Strike builder code (1 to 64 of A-Z, 0-9, - and _)");
+
+export const curatorFeeMaxBps = 20;
+
+export const curatorFeeSchema = z.strictObject({
+  builderCode: builderCodeSchema,
+  feeBps: z.number().int().min(1).max(curatorFeeMaxBps),
+});
+export type CuratorFee = z.infer<typeof curatorFeeSchema>;
+
 export const planFieldsSchema = z.strictObject({
   schemaVersion: z.literal(1),
   market: z.string().min(1).max(64),
@@ -126,5 +138,6 @@ export const planFieldsSchema = z.strictObject({
   entryExpiresAt: z.iso.datetime({ offset: false }),
   rationale: z.string().max(2000),
   environment: z.enum(environments),
+  curatorFee: curatorFeeSchema.optional(),
 });
 export type PlanFields = z.infer<typeof planFieldsSchema>;
