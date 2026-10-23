@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { planVersionDigest } from "../src/digest";
-import { publishedPlanSchema } from "../src/plan";
+import { curatorFeeReplayOnly, publishedPlanSchema } from "../src/plan";
 
 const terms = {
   schemaVersion: 1,
@@ -18,8 +18,10 @@ const terms = {
 
 const digestBeforeCuratorFees = "4c482500c9a7edfdd994e1d1bdbca208312bd6feed14db28eb510c719c93b81d";
 
-const curatorFeeIssues = (curatorFee: unknown) => {
-  const result = publishedPlanSchema.safeParse({ ...terms, curatorFee });
+const replayTerms = { ...terms, environment: "replay" };
+
+const curatorFeeIssues = (curatorFee: unknown, on: object = replayTerms) => {
+  const result = publishedPlanSchema.safeParse({ ...on, curatorFee });
   return result.success ? [] : result.error.issues.map((issue) => issue.path.join("."));
 };
 
@@ -33,10 +35,10 @@ describe("a curator fee on a published plan", () => {
   it("is part of the digest, so a different code or rate is a different version", () => {
     const withFee = (builderCode: string, feeBps: number) =>
       planVersionDigest(
-        publishedPlanSchema.parse({ ...terms, curatorFee: { builderCode, feeBps } }),
+        publishedPlanSchema.parse({ ...replayTerms, curatorFee: { builderCode, feeBps } }),
       );
     const digests = [
-      digestBeforeCuratorFees,
+      planVersionDigest(publishedPlanSchema.parse(replayTerms)),
       withFee("range_traders", 5),
       withFee("range_traders", 6),
       withFee("range-traders", 5),
@@ -58,6 +60,17 @@ describe("a curator fee on a published plan", () => {
     }
     expect(curatorFeeIssues({ builderCode: "range_traders", feeBps: 5, share: 1 })).toEqual([
       "curatorFee",
+    ]);
+  });
+
+  it("is refused on a live plan until curator fees have run on Strike mainnet", () => {
+    const result = publishedPlanSchema.safeParse({
+      ...terms,
+      curatorFee: { builderCode: "range_traders", feeBps: 5 },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toMatchObject([
+      { path: ["curatorFee"], message: curatorFeeReplayOnly },
     ]);
   });
 });

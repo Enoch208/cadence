@@ -43,7 +43,9 @@ describe("the words around a curator fee", () => {
     expect(computedFrom.replay).not.toMatch(/strike/i);
     const live = curatorFeesLine({ curatorFee, curatorFeesEarned: earned, environment: "live" });
     expect(live).toContain(curatorFeeNotYetLive);
-    expect(curatorFeeNotYetLive).toBe("Curator fees have not run on Strike mainnet yet.");
+    expect(curatorFeeNotYetLive).toBe(
+      "Curator fees run on replay plans only, until they have run on Strike mainnet.",
+    );
     for (const copy of [replay, live, curatorFeeNotApplied(curatorFee), computedFrom.live]) {
       expect(copy).not.toMatch(banned);
     }

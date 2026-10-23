@@ -11,7 +11,9 @@ type CuratorFeeFieldsProps = {
 };
 
 export function CuratorFeeFields({ draft, errors, onChange }: CuratorFeeFieldsProps) {
-  const offered = draft.builderCode.trim() !== "" || draft.curatorFeeBps.trim() !== "";
+  if (draft.environment === "live") {
+    return <p className="t-body md:col-span-2">{curatorFeeNotYetLive}</p>;
+  }
   return (
     <>
       <Field
@@ -36,11 +38,6 @@ export function CuratorFeeFields({ draft, errors, onChange }: CuratorFeeFieldsPr
         </a>
         .
       </p>
-      {offered && draft.environment === "live" ? (
-        <p className="t-body rounded-card border border-ink bg-butter p-4 md:col-span-2">
-          {curatorFeeNotYetLive}
-        </p>
-      ) : null}
     </>
   );
 }

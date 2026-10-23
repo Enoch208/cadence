@@ -36,7 +36,10 @@ async function memberConnecting() {
 
 describe("connecting a wallet under a plan's curator code", () => {
   it("asks the member to approve the curator's code at the plan's fee and records both", async () => {
-    const planPublicId = await publishedPlan({ ...planFields(), curatorFee });
+    const planPublicId = await publishedPlan({
+      ...planFields({ environment: "replay" }),
+      curatorFee,
+    });
     const { app, cookie, strike, start, finish } = await memberConnecting();
     const started = await start({ ...solanaWallet, planPublicId });
     expect(started).toMatchObject({

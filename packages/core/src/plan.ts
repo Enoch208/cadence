@@ -47,10 +47,16 @@ export function planGeometryIssues(plan: PlanFields): PlanGeometryIssue[] {
   return issues;
 }
 
+export const curatorFeeReplayOnly =
+  "Curator fees run on replay plans only, until they have run on Strike mainnet.";
+
 export const publishedPlanSchema = planFieldsSchema.superRefine(
   (plan, ctx) => {
     for (const issue of planGeometryIssues(plan)) {
       ctx.addIssue({ code: "custom", path: [issue.path], message: issue.message });
+    }
+    if (plan.environment === "live" && plan.curatorFee !== undefined) {
+      ctx.addIssue({ code: "custom", path: ["curatorFee"], message: curatorFeeReplayOnly });
     }
   },
   { when: (payload) => payload.issues.length === 0 },

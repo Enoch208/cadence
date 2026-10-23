@@ -97,15 +97,24 @@ describe("publishing", () => {
 
   it("publishes a curator fee as part of the version members read and its digest", async () => {
     const curatorFee = { builderCode: "range_traders", feeBps: 5 };
-    const { app, cookie, draft } = await planWithDraft({ ...planFields(), curatorFee });
+    const { app, cookie, draft } = await planWithDraft({
+      ...planFields({ environment: "replay" }),
+      curatorFee,
+    });
     const reply = await publish(app, cookie, draft.id);
-    const plan = publishedPlanSchema.parse({ ...planFields(), environment: "live", curatorFee });
+    const plan = publishedPlanSchema.parse({
+      ...planFields({ environment: "replay" }),
+      curatorFee,
+    });
     expect(reply).toMatchObject({ status: 201, body: { digest: planVersionDigest(plan) } });
     expect((await call(app, "GET", `/api/plans/${draft.publicId}`)).body).toMatchObject({
       current: { plan: { curatorFee } },
     });
     const raised = await publish(app, cookie, draft.id, {
-      fields: { ...planFields(), curatorFee: { ...curatorFee, feeBps: 21 } },
+      fields: {
+        ...planFields({ environment: "replay" }),
+        curatorFee: { ...curatorFee, feeBps: 21 },
+      },
     });
     expect(raised).toMatchObject({ status: 422, body: { code: "PLAN_INVALID" } });
   });

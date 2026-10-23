@@ -1,8 +1,8 @@
-import type { CuratorFee, Environment } from "@cadence/core";
+import { curatorFeeReplayOnly, type CuratorFee, type Environment } from "@cadence/core";
 
 export const builderCodesUrl = "https://app.strikefinance.org/builder-codes";
 
-export const curatorFeeNotYetLive = "Curator fees have not run on Strike mainnet yet.";
+export const curatorFeeNotYetLive = curatorFeeReplayOnly;
 
 export const curatorFeeRate = (fee: Pick<CuratorFee, "feeBps">) =>
   `${(fee.feeBps / 100).toFixed(2)}%`;

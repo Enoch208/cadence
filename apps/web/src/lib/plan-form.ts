@@ -64,7 +64,7 @@ export function checkDraft(draft: PlanDraft, now: number): DraftCheck {
     entryExpiresAt: utcInstant(draft.closesAtLocal),
     rationale: draft.rationale.trim(),
     environment: draft.environment,
-    ...curatorFeeCandidate(draft),
+    ...(draft.environment === "replay" ? curatorFeeCandidate(draft) : {}),
   };
   const parsed = publishedPlanSchema.safeParse(candidate);
   const errors: Partial<Record<keyof PlanDraft, string>> = {};

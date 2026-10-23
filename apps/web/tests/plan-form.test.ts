@@ -35,7 +35,7 @@ describe("the curator's plan form", () => {
 
   it("attaches the curator's builder code and fee when both are given", () => {
     const result = checkDraft(
-      { ...draft, builderCode: " range_traders ", curatorFeeBps: "5" },
+      { ...draft, environment: "replay", builderCode: " range_traders ", curatorFeeBps: "5" },
       now,
     );
     expect(result.ok && result.plan.curatorFee).toEqual({
@@ -48,17 +48,24 @@ describe("the curator's plan form", () => {
     const feeMessage = "Enter a whole number of basis points from 1 to 20.";
     const codeMessage = "Use the code you registered on Strike: 1 to 64 letters, digits, - or _.";
     for (const curatorFeeBps of ["", "0", "21", "2.5", "five"]) {
-      expect(checkDraft({ ...draft, builderCode: "range_traders", curatorFeeBps }, now)).toEqual({
+      const fee = { environment: "replay" as const, builderCode: "range_traders", curatorFeeBps };
+      expect(checkDraft({ ...draft, ...fee }, now)).toEqual({
         ok: false,
         errors: { curatorFeeBps: feeMessage },
       });
     }
     for (const builderCode of ["", "has space"]) {
-      expect(checkDraft({ ...draft, builderCode, curatorFeeBps: "5" }, now)).toEqual({
+      const fee = { environment: "replay" as const, builderCode, curatorFeeBps: "5" };
+      expect(checkDraft({ ...draft, ...fee }, now)).toEqual({
         ok: false,
         errors: { builderCode: codeMessage },
       });
     }
+  });
+
+  it("leaves a curator fee off a live plan, since fees run on replay plans only", () => {
+    const result = checkDraft({ ...draft, builderCode: "range_traders", curatorFeeBps: "5" }, now);
+    expect(result.ok && Object.keys(result.plan)).not.toContain("curatorFee");
   });
 
   it("keeps the environment the curator chose", () => {

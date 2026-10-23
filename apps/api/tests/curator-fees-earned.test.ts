@@ -29,7 +29,10 @@ async function fill(intentId: string, role: OrderRole, side: OrderSide, price: s
 
 describe("the curator fees a plan has earned", () => {
   it("adds up the computed fee on the fills of members who paid it", async () => {
-    const { app, cookie, draft } = await planWithDraft({ ...planFields(), curatorFee });
+    const { app, cookie, draft } = await planWithDraft({
+      ...planFields({ environment: "replay" }),
+      curatorFee,
+    });
     await publish(app, cookie, draft.id);
     const [version] = await db
       .select({ id: planVersions.id })
