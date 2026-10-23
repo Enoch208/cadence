@@ -7,6 +7,8 @@ can take on Strike at a size that fits their own account, with the stop and targ
 be told in plain words why they should not.
 
 - **Live app:** https://cadencetrade.xyz
+- **Demo video (2:28):** https://cadencetrade.xyz/demo.mp4 (full quality in the
+  [release](https://github.com/Enoch208/cadence/releases/tag/demo-2026-10-23))
 - **Telegram bot:** [@usecadencebot](https://t.me/usecadencebot)
 - **Built on:** [Strike Finance](https://www.strikefinance.org) perpetuals, **mainnet**
 - **Evidence:** [`evidence/`](evidence/): every mainnet order ID, and what is proven only in replay
