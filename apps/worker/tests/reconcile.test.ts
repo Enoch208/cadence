@@ -37,6 +37,19 @@ const hidingTheEntry = (replay: ReplayStrikeClient): ReplayStrikeClient => ({
     clientOrderId.endsWith("-e") ? Promise.resolve(null) : replay.order(symbol, clientOrderId),
 });
 
+const forgettingTheEntry = (replay: ReplayStrikeClient): ReplayStrikeClient => ({
+  ...hidingTheEntry(replay),
+  fills: async (symbol, sinceMs) =>
+    (await replay.fills(symbol, sinceMs)).map((fill) =>
+      fill.clientOrderId?.endsWith("-e") === true ? { ...fill, clientOrderId: null } : fill,
+    ),
+});
+
+const hidingEverythingButThePosition = (replay: ReplayStrikeClient): ReplayStrikeClient => ({
+  ...hidingTheEntry(replay),
+  fills: () => Promise.resolve([]),
+});
+
 const deepBook =
   (thin: ReplayStrikeClient): ReplayStrikeClient["book"] =>
   async (symbol, depth) => {
@@ -217,8 +230,30 @@ describe("reconciling an entry that did not open a position", () => {
     expect(await reservationStatus(intent.id)).toBe("released");
   });
 
+  it.each([
+    ["by its client ID", hidingTheEntry],
+    ["when Strike no longer links the fill to a client ID", forgettingTheEntry],
+  ])(
+    "verifies a fill-or-kill entry Strike no longer serves from its fills, %s",
+    async (_, client) => {
+      const { intent, deps, clock } = await approved({ client });
+      await submitIntent(deps, intent.id);
+      clock.advance(1_000);
+      expect(await reconcileIntent(deps, intent.id)).toBe("open_verified");
+      const rows = await orderRowsOf(intent.id);
+      const entry = rows.find((row) => row.role === "entry");
+      expect(entry?.lastStatus).toBe("filled");
+      expect(entry?.exchangeOrderId).not.toBeNull();
+      expect(new Decimal(entry?.filledSize ?? "0").toFixed()).toBe(intent.approved.quantity);
+      expect((await fillsOf(intent.id)).map((fill) => fill.role)).toEqual(["entry"]);
+      expect(await eventTypes(intent.id)).toContain("exits_verified");
+    },
+  );
+
   it("never rejects an entry it cannot find while the account holds a position, and pauses the account", async () => {
-    const { intent, deps, clock, member } = await approved({ client: hidingTheEntry });
+    const { intent, deps, clock, member } = await approved({
+      client: hidingEverythingButThePosition,
+    });
     await submitIntent(deps, intent.id);
     clock.advance(10_000);
 

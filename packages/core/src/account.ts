@@ -55,7 +55,7 @@ export type AccountState = {
 export type ExchangeFill = {
   fillId: string;
   orderId: string;
-  clientOrderId: string;
+  clientOrderId: string | null;
   symbol: string;
   side: OrderSide;
   price: DecimalString;

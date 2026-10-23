@@ -228,6 +228,7 @@ describe("attributing fills", () => {
     ...change,
   });
   const rows = [row("entry", "cad-i-e", null), row("target", "cad-i-t", "1000003")];
+  const claim = { openingSide: "buy" as const, submittedAt: 100_000, quantity: "0.012" };
 
   it("claims fills by client ID or exchange order ID and counts every fill toward flatness", () => {
     const observed = [
@@ -235,7 +236,7 @@ describe("attributing fills", () => {
       fill({}),
       fill({ fillId: "f2", side: "sell", clientOrderId: "", orderId: "1000003", filledAt: 200 }),
     ];
-    const ours = attributeFills(observed, rows);
+    const ours = attributeFills(observed, rows, { ...claim, submittedAt: 90 });
     expect(ours.map(({ fill: f, row: r }) => [f.fillId, r.role])).toEqual([
       ["f1", "entry"],
       ["f2", "target"],
@@ -255,9 +256,58 @@ describe("attributing fills", () => {
         filledAt: 300,
       }),
     ];
-    expect(fillFacts(observed, attributeFills(observed, rows), "buy")).toEqual({
+    expect(
+      fillFacts(observed, attributeFills(observed, rows, { ...claim, submittedAt: 90 }), "buy"),
+    ).toEqual({
       openSize: "0.012",
       flatByFills: false,
     });
+  });
+
+  const orphan = (change: Partial<ExchangeFill> = {}) =>
+    fill({
+      fillId: "o1",
+      clientOrderId: null,
+      orderId: "11516191287",
+      filledAt: 101_000,
+      ...change,
+    });
+  const roles = (observed: ExchangeFill[], withRows = rows) =>
+    attributeFills(observed, withRows, claim).map(({ fill: f, row: r }) => [f.fillId, r.role]);
+
+  it("claims as the entry a fill whose order Strike no longer serves, when it can only be ours", () => {
+    expect(roles([orphan()])).toEqual([["o1", "entry"]]);
+    expect(
+      roles([
+        orphan({ size: "0.007" }),
+        orphan({ fillId: "o2", size: "0.005", filledAt: 101_500 }),
+      ]),
+    ).toEqual([
+      ["o1", "entry"],
+      ["o2", "entry"],
+    ]);
+    expect(roles([orphan({ filledAt: 100_000 - 4_000 })])).toEqual([["o1", "entry"]]);
+  });
+
+  it.each([
+    ["on the closing side", { side: "sell" as const }],
+    ["from before the order was sent", { filledAt: 100_000 - 6_000 }],
+    ["larger than the approved quantity", { size: "0.013" }],
+  ])("never claims an orphan fill %s", (_, change) => {
+    expect(roles([orphan(change)])).toEqual([]);
+  });
+
+  it("never claims orphans from two different orders, or once the entry is already known", () => {
+    expect(
+      roles([orphan({ size: "0.006" }), orphan({ fillId: "o2", orderId: "777", size: "0.006" })]),
+    ).toEqual([]);
+    expect(roles([fill({}), orphan({ fillId: "o2", size: "0.001" })])).toEqual([["f1", "entry"]]);
+    const known = [row("entry", "cad-i-e", "555"), row("target", "cad-i-t", "1000003")];
+    expect(roles([orphan()], known)).toEqual([]);
+    expect(roles([orphan({ orderId: "555" })], known)).toEqual([["o1", "entry"]]);
+  });
+
+  it("gives a fill on a leg's order to that leg, never to the entry", () => {
+    expect(roles([orphan({ orderId: "1000003", side: "buy" })])).toEqual([["o1", "target"]]);
   });
 });

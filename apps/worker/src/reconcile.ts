@@ -1,5 +1,5 @@
 import { Decimal } from "decimal.js";
-import { clientOrderIdFor, type IntentState } from "@cadence/core";
+import { clientOrderIdFor, type ExchangeOrderSnapshot, type IntentState } from "@cadence/core";
 import type { ExchangeOrderRow, Tx } from "@cadence/db";
 import type { WorkerDeps } from "./deps";
 import { entryVerdict } from "./entry-verdict";
@@ -49,6 +49,32 @@ function traced(pass: Pass): boolean {
   );
 }
 
+function entryFromFills(pass: Pass): ExchangeOrderSnapshot | null {
+  const entryFills = pass.ours.filter(({ row }) => row.role === "entry");
+  const [first] = entryFills;
+  if (first === undefined) {
+    return null;
+  }
+  const { intent, plan } = pass.context;
+  const filled = entryFills.reduce((total, { fill }) => total.plus(fill.size), new Decimal(0));
+  return {
+    orderId: first.fill.orderId,
+    clientOrderId: first.row.clientOrderId,
+    symbol: intent.market,
+    side: plan.direction === "long" ? "buy" : "sell",
+    type: "limit",
+    status: filled.greaterThanOrEqualTo(intent.approved.quantity) ? "filled" : "open",
+    size: intent.approved.quantity,
+    filled: filled.toFixed(),
+    price: intent.approved.limitPrice,
+    stopPrice: null,
+    reduceOnly: false,
+    strategyId: intent.strategyId,
+    isStrategyPrimary: true,
+    closeReason: null,
+  };
+}
+
 function legsOf(pass: Pass) {
   const { intent, plan } = pass.context;
   const side = plan.direction === "long" ? "sell" : "buy";
@@ -70,9 +96,10 @@ async function judge(tx: Tx, pass: Pass): Promise<Judgment> {
   if (locked !== context.intent.state) {
     return { state: locked ?? context.intent.state, recovery: null };
   }
+  const entry = observation.orders.get("entry") ?? entryFromFills(pass);
   for (const row of pass.rows) {
-    const snapshot = observation.orders.get(row.role);
-    if (snapshot !== undefined) {
+    const snapshot = row.role === "entry" ? entry : observation.orders.get(row.role);
+    if (snapshot !== undefined && snapshot !== null) {
       await recordSnapshot(tx, row, snapshot);
     }
   }
@@ -92,7 +119,7 @@ async function judge(tx: Tx, pass: Pass): Promise<Judgment> {
   if (cursor.state === "submitted" || cursor.state === "unknown") {
     const verdict = entryVerdict({
       state: cursor.state,
-      entry: observation.orders.get("entry") ?? null,
+      entry,
       sinceSubmitMs: at - pass.times.submittedAt,
       traced: traced(pass),
     });
@@ -153,7 +180,11 @@ export async function reconcileIntent(deps: WorkerDeps, intentId: string): Promi
     rows,
     times,
     observation,
-    ours: attributeFills(observation.fills, rows),
+    ours: attributeFills(observation.fills, rows, {
+      openingSide: context.plan.direction === "long" ? "buy" : "sell",
+      submittedAt: times.submittedAt,
+      quantity: context.intent.approved.quantity,
+    }),
     at: deps.now(),
   };
   const judgment = await deps.db.transaction((tx) => judge(tx, pass));

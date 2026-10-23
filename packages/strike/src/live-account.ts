@@ -85,13 +85,7 @@ export function createAccountReads(transport: Transport) {
         order === null ? [] : [[order.orderId, order.clientOrderId] as const],
       ),
     );
-    return rows.map((row) => {
-      const clientOrderId = clientIds.get(row.orderId);
-      if (clientOrderId === undefined) {
-        throw misreported("fills", `Strike cannot find order ${row.orderId} for one of its fills`);
-      }
-      return toExchangeFill(row, clientOrderId);
-    });
+    return rows.map((row) => toExchangeFill(row, clientIds.get(row.orderId) ?? null));
   }
 
   return {

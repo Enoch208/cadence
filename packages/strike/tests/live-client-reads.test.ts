@@ -179,6 +179,28 @@ describe("signed reads", () => {
     ]);
   });
 
+  it("keeps a fill whose order Strike no longer serves, with no client order ID", async () => {
+    const harness = liveHarness((request) =>
+      request.url.pathname === "/v2/history/fill"
+        ? reply("mainnet-get-v2-history-fill-fok-entry.json")
+        : json(404, '{"error":"order not found"}'),
+    );
+    const fills = await harness.client.fills("BTC-USD", 1792723200000);
+    expect(fills).toEqual([
+      {
+        fillId: "4499429",
+        orderId: "11516191287",
+        clientOrderId: null,
+        symbol: "BTC-USD",
+        side: "buy",
+        price: "81742.000000000000000000",
+        size: "0.000300000000000000",
+        fee: "0.012261300000000000",
+        filledAt: 1792723254464,
+      },
+    ]);
+  });
+
   it("refuses to truncate when a whole page of fills comes back", async () => {
     const row = JSON.parse(fixtureText("documented/docs-user-history__fill-history.json")) as {
       fills: unknown[];

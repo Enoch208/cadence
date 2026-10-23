@@ -160,7 +160,7 @@ export const toFillRows = (raw: unknown): FillRow[] =>
     filledAt: fill.timestamp,
   }));
 
-export const toExchangeFill = (row: FillRow, clientOrderId: string): ExchangeFill => ({
+export const toExchangeFill = (row: FillRow, clientOrderId: string | null): ExchangeFill => ({
   ...row,
   clientOrderId,
 });
