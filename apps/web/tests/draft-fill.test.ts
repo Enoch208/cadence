@@ -15,6 +15,8 @@ const empty: PlanDraft = {
   targetPrice: "",
   closesAtLocal: "",
   rationale: "My own words.",
+  builderCode: "",
+  curatorFeeBps: "",
 };
 
 const reply = planDraftSchema.parse({

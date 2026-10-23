@@ -12,6 +12,7 @@ import {
   type IntentView,
   type ReceiptResponse,
 } from "@/lib/api/schemas";
+import { computedFrom, curatorFeeRate } from "@/lib/copy/curator-fee";
 import { intentStateLabel, venueName } from "@/lib/copy/states";
 import { formatInstant, formatPrice, formatUsd, shortDigest } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
@@ -70,6 +71,14 @@ function ReceiptView({ data, intent }: { data: ReceiptResponse; intent: IntentVi
             ["Entry filled", leg(receipt.entry)],
             ["Exit filled", leg(receipt.exit)],
             ["Fees paid", formatUsd(receipt.feesPaid)],
+            ...(receipt.curatorFee === null
+              ? []
+              : [
+                  [
+                    "Curator fee charged",
+                    `${formatUsd(receipt.curatorFee.computedCharge)} at ${curatorFeeRate(receipt.curatorFee)}, ${computedFrom[intent.environment]}`,
+                  ] as const,
+                ]),
             ["Realized result", profitLine(receipt.realizedPnl)],
           ]}
         />

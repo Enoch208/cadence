@@ -10,6 +10,7 @@ import { checkDraft, type PlanDraft } from "@/lib/plan-form";
 import { useNow } from "@/lib/use-now";
 import { useResource } from "@/lib/use-resource";
 import { Panel } from "./AppShell";
+import { CuratorFeeFields } from "./CuratorFeeFields";
 import { DraftFromMessage } from "./DraftFromMessage";
 import { Field } from "./Field";
 import { Problem } from "./Notice";
@@ -25,6 +26,8 @@ const emptyDraft: PlanDraft = {
   targetPrice: "",
   closesAtLocal: "",
   rationale: "",
+  builderCode: "",
+  curatorFeeBps: "",
 };
 
 const fieldNames: Record<FormKey, string> = {
@@ -37,6 +40,8 @@ const fieldNames: Record<FormKey, string> = {
   targetPrice: "target",
   closesAtLocal: "entry window",
   rationale: "why this setup",
+  builderCode: "builder code",
+  curatorFeeBps: "curator fee",
 };
 
 const environmentOptions = [
@@ -238,6 +243,7 @@ export function PlanForm({ communityId }: { communityId: string }) {
             error={errors.rationale}
             hint={sources.rationale === undefined ? undefined : "Copied from your message."}
           />
+          <CuratorFeeFields draft={draft} errors={errors} onChange={set} />
         </div>
         <div>
           <ActionButton onClick={() => void publish()}>Publish to the group</ActionButton>

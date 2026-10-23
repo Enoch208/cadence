@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { AppShell, Panel } from "@/components/app/AppShell";
 import { EnvironmentBadge } from "@/components/app/EnvironmentBadge";
 import { Field } from "@/components/app/Field";
@@ -7,6 +8,7 @@ import { Loading, Problem } from "@/components/app/Notice";
 import { ActionButton } from "@/components/ui/Button";
 import { sourcedAccountsSchema, type SourcedAccount } from "@/lib/api/builder";
 import { apiRequest } from "@/lib/api/client";
+import { curatorFeeRate } from "@/lib/copy/curator-fee";
 import { accountSchema } from "@/lib/api/schemas";
 import { useResource } from "@/lib/use-resource";
 import { ReplayAccounts } from "./ReplayAccounts";
@@ -44,6 +46,12 @@ function AccountRow({ account, onChanged }: { account: SourcedAccount; onChanged
       </div>
       {account.credentialSource === null ? null : (
         <span className="t-body">{connectedBy[account.credentialSource]}</span>
+      )}
+      {account.builderCode === null || account.builderFeeBps === null ? null : (
+        <span className="t-body">
+          Approved builder code {account.builderCode} at up to{" "}
+          {curatorFeeRate({ feeBps: account.builderFeeBps })} a fill
+        </span>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="t-body">
@@ -115,6 +123,7 @@ function ConnectLive({ onConnected }: { onConnected: () => void }) {
 }
 
 function Accounts() {
+  const [params] = useSearchParams();
   const accounts = useResource("accounts", (signal) =>
     apiRequest(sourcedAccountsSchema, "/api/accounts", { signal }),
   );
@@ -150,7 +159,7 @@ function Accounts() {
         }}
       />
       <ConnectLive onConnected={accounts.reload} />
-      <ReplayAccounts onAdded={accounts.reload} />
+      <ReplayAccounts onAdded={accounts.reload} planPublicId={params.get("plan")} />
       <RiskRules />
     </>
   );

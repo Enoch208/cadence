@@ -176,6 +176,10 @@ export const authoredPlanSchema = z.object({
     approved: z.number().int().nonnegative(),
     filled: z.number().int().nonnegative(),
   }),
+  curatorFee: curatorFeeSchema.nullable().default(null),
+  curatorFeesEarned: z
+    .object({ computed: decimal, fills: z.number().int().nonnegative() })
+    .default({ computed: "0.00", fills: 0 }),
 });
 export type AuthoredPlan = z.infer<typeof authoredPlanSchema>;
 

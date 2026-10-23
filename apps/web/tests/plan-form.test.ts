@@ -13,6 +13,8 @@ const draft: PlanDraft = {
   targetPrice: "86800",
   closesAtLocal: "2026-10-23T18:00:00Z",
   rationale: " Reclaim of the weekly open. ",
+  builderCode: "",
+  curatorFeeBps: "",
 };
 
 describe("the curator's plan form", () => {
@@ -23,6 +25,39 @@ describe("the curator's plan form", () => {
       expect(result.plan.rationale).toBe("Reclaim of the weekly open.");
       expect(result.plan.entryExpiresAt).toBe("2026-10-23T18:00:00Z");
       expect(result.plan.environment).toBe("live");
+    }
+  });
+
+  it("publishes no curator fee when both fee fields are empty", () => {
+    const result = checkDraft(draft, now);
+    expect(result.ok && Object.keys(result.plan)).not.toContain("curatorFee");
+  });
+
+  it("attaches the curator's builder code and fee when both are given", () => {
+    const result = checkDraft(
+      { ...draft, builderCode: " range_traders ", curatorFeeBps: "5" },
+      now,
+    );
+    expect(result.ok && result.plan.curatorFee).toEqual({
+      builderCode: "range_traders",
+      feeBps: 5,
+    });
+  });
+
+  it("asks for the missing half of a curator fee and keeps the fee within 1 to 20 bps", () => {
+    const feeMessage = "Enter a whole number of basis points from 1 to 20.";
+    const codeMessage = "Use the code you registered on Strike: 1 to 64 letters, digits, - or _.";
+    for (const curatorFeeBps of ["", "0", "21", "2.5", "five"]) {
+      expect(checkDraft({ ...draft, builderCode: "range_traders", curatorFeeBps }, now)).toEqual({
+        ok: false,
+        errors: { curatorFeeBps: feeMessage },
+      });
+    }
+    for (const builderCode of ["", "has space"]) {
+      expect(checkDraft({ ...draft, builderCode, curatorFeeBps: "5" }, now)).toEqual({
+        ok: false,
+        errors: { builderCode: codeMessage },
+      });
     }
   });
 

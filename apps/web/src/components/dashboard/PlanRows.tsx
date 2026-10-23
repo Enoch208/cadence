@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { EnvironmentBadge } from "@/components/app/EnvironmentBadge";
 import type { AuthoredPlan } from "@/lib/api/schemas";
 import { formatInstant } from "@/lib/format";
-import { funnelLine } from "@/lib/funnel";
+import { curatorFeesLine, funnelLine } from "@/lib/funnel";
 
 function standing(plan: AuthoredPlan, now: number): string {
   if (plan.status === "draft") {
@@ -38,6 +38,9 @@ export function PlanRows({ plans, now }: { plans: readonly AuthoredPlan[]; now: 
               </span>
               {plan.status === "draft" ? null : (
                 <span className="t-body tabular-nums">{funnelLine(plan)}</span>
+              )}
+              {plan.curatorFee === null || plan.status === "draft" ? null : (
+                <span className="t-body tabular-nums">{curatorFeesLine(plan)}</span>
               )}
             </span>
             <span className="flex items-center gap-3">

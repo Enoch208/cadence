@@ -1,5 +1,6 @@
 import type { PlanFields } from "@cadence/core";
 import { TicketRows } from "@/components/ui/Ticket";
+import { curatorFeeNotYetLive, curatorFeeTerms } from "@/lib/copy/curator-fee";
 import { formatInstant, formatPrice } from "@/lib/format";
 import { Countdown } from "./Countdown";
 
@@ -22,8 +23,16 @@ export function PlanSummary({ plan }: { plan: PlanFields }) {
           ["Target", formatPrice(plan.targetPrice)],
           ["Exits trigger on", "Mark price"],
           ["Entry closes", formatInstant(plan.entryExpiresAt)],
+          ...(plan.curatorFee === undefined
+            ? []
+            : [["Curator fee", curatorFeeTerms(plan.curatorFee)] as const]),
         ]}
       />
+      {plan.curatorFee !== undefined && plan.environment === "live" ? (
+        <p className="t-body rounded-card border border-ink bg-butter p-4">
+          {curatorFeeNotYetLive}
+        </p>
+      ) : null}
       <p className="t-meta">
         <Countdown until={closesAt} prefix="Entry window closes in" />
       </p>

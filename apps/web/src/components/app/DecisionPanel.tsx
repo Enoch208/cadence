@@ -1,8 +1,9 @@
-import type { Decision, PlanFields } from "@cadence/core";
+import type { Decision, PlanFields, Proposal } from "@cadence/core";
 import { Cancel01Icon, MinusSignCircleIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { StatusPill, TicketRows } from "@/components/ui/Ticket";
 import { BlockedEvidence } from "./BlockedEvidence";
 import { blockedReasonCopy, resizedReasonCopy } from "@/lib/copy/reasons";
+import { curatorFeeNotApplied } from "@/lib/copy/curator-fee";
 import { outcomeLabel } from "@/lib/copy/states";
 import { formatPrice, formatUsd } from "@/lib/format";
 
@@ -11,6 +12,15 @@ const outcomeStyle = {
   RESIZED: { tone: "butter", icon: MinusSignCircleIcon },
   BLOCKED: { tone: "blush", icon: Cancel01Icon },
 } as const;
+
+function plannedRiskNote({ costs, curatorFee }: Proposal): string {
+  const parts = [
+    `fees of ${formatUsd(costs.entryFee)} in and ${formatUsd(costs.exitFee)} out`,
+    `a stop slippage reserve of ${formatUsd(costs.stopSlippageReserve)}`,
+    ...(curatorFee === null ? [] : [`a curator fee of ${formatUsd(costs.curatorFee)}`]),
+  ];
+  return `Planned risk is the modelled loss at the stop, including ${parts.join(", ")} and funding of ${formatUsd(costs.fundingReserve)}. It is not a maximum loss: a stop can fill worse than planned.`;
+}
 
 export function DecisionPanel({ decision, plan }: { decision: Decision; plan: PlanFields }) {
   const style = outcomeStyle[decision.outcome];
@@ -47,6 +57,9 @@ export function DecisionPanel({ decision, plan }: { decision: Decision; plan: Pl
               ["Limit price", formatPrice(decision.proposal.limitPrice)],
               ["Notional", formatUsd(decision.proposal.notional)],
               ["Planned risk", formatUsd(decision.proposal.plannedLoss)],
+              ...(decision.proposal.curatorFee === null
+                ? []
+                : [["Curator fee", formatUsd(decision.proposal.costs.curatorFee)] as const]),
               ["Reward to risk after costs", decision.proposal.rewardRiskNet],
               [
                 "Margin at your leverage",
@@ -55,14 +68,10 @@ export function DecisionPanel({ decision, plan }: { decision: Decision; plan: Pl
               ["Estimated liquidation", formatPrice(decision.proposal.estimatedLiquidationPrice)],
             ]}
           />
-          <p className="t-body">
-            Planned risk is the modelled loss at the stop, including fees of{" "}
-            {formatUsd(decision.proposal.costs.entryFee)} in and{" "}
-            {formatUsd(decision.proposal.costs.exitFee)} out, a stop slippage reserve of{" "}
-            {formatUsd(decision.proposal.costs.stopSlippageReserve)} and funding of{" "}
-            {formatUsd(decision.proposal.costs.fundingReserve)}. It is not a maximum loss: a stop
-            can fill worse than planned.
-          </p>
+          <p className="t-body">{plannedRiskNote(decision.proposal)}</p>
+          {plan.curatorFee !== undefined && decision.proposal.curatorFee === null ? (
+            <p className="t-body">{curatorFeeNotApplied(plan.curatorFee)}</p>
+          ) : null}
         </>
       )}
     </div>

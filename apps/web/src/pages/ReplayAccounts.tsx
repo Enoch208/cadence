@@ -29,7 +29,9 @@ const scenarios = [
   },
 ] as const;
 
-export function ReplayAccounts({ onAdded }: { onAdded: () => void }) {
+type ReplayAccountsProps = { onAdded: () => void; planPublicId: string | null };
+
+export function ReplayAccounts({ onAdded, planPublicId }: ReplayAccountsProps) {
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const add = async (scenario: string) => {
@@ -38,7 +40,7 @@ export function ReplayAccounts({ onAdded }: { onAdded: () => void }) {
     try {
       await apiRequest(accountSchema, "/api/accounts/replay", {
         method: "POST",
-        body: { scenario },
+        body: planPublicId === null ? { scenario } : { scenario, planPublicId },
       });
       onAdded();
     } catch (error) {
@@ -55,6 +57,12 @@ export function ReplayAccounts({ onAdded }: { onAdded: () => void }) {
         replay plans, and every screen says Replay. Each one reproduces a situation Cadence has to
         handle.
       </p>
+      {planPublicId === null ? null : (
+        <p className="t-body rounded-card border border-ink bg-sky p-4">
+          Accounts you add here are connected under the curator’s builder code for plan{" "}
+          {planPublicId}, so its curator fee applies to them.
+        </p>
+      )}
       <ul className="flex flex-col">
         {scenarios.map((scenario) => (
           <li

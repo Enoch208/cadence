@@ -5,6 +5,7 @@ import {
   type Environment,
   type PublishedPlan,
 } from "@cadence/core";
+import { curatorFeeCandidate, curatorFeeField, curatorFeeMessages } from "./curator-fee-form";
 
 export type PlanDraft = {
   environment: Environment;
@@ -16,6 +17,8 @@ export type PlanDraft = {
   targetPrice: string;
   closesAtLocal: string;
   rationale: string;
+  builderCode: string;
+  curatorFeeBps: string;
 };
 
 export type DraftCheck =
@@ -61,15 +64,21 @@ export function checkDraft(draft: PlanDraft, now: number): DraftCheck {
     entryExpiresAt: utcInstant(draft.closesAtLocal),
     rationale: draft.rationale.trim(),
     environment: draft.environment,
+    ...curatorFeeCandidate(draft),
   };
   const parsed = publishedPlanSchema.safeParse(candidate);
   const errors: Partial<Record<keyof PlanDraft, string>> = {};
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
-      const key = fieldFor[String(issue.path[0])];
+      const feeKey = curatorFeeField(issue.path);
+      const key = feeKey ?? fieldFor[String(issue.path[0])];
       if (key !== undefined && errors[key] === undefined) {
         errors[key] =
-          key === "closesAtLocal" ? "Choose when the entry window closes." : issue.message;
+          feeKey !== null
+            ? curatorFeeMessages[feeKey]
+            : key === "closesAtLocal"
+              ? "Choose when the entry window closes."
+              : issue.message;
       }
     }
     return { ok: false, errors };

@@ -4,6 +4,8 @@ import { accountSchema } from "./schemas";
 
 export const sourcedAccountSchema = accountSchema.extend({
   credentialSource: z.enum(["api_key", "builder"]).nullable(),
+  builderCode: z.string().nullable().default(null),
+  builderFeeBps: z.number().int().nullable().default(null),
 });
 export type SourcedAccount = z.infer<typeof sourcedAccountSchema>;
 

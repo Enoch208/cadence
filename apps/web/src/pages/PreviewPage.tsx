@@ -1,5 +1,6 @@
+import type { Environment } from "@cadence/core";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { AccountPicker } from "@/components/app/AccountPicker";
 import { AppShell, Panel } from "@/components/app/AppShell";
 import { Countdown } from "@/components/app/Countdown";
@@ -18,27 +19,29 @@ import {
   type PublicPlan,
 } from "@/lib/api/schemas";
 import { venueName } from "@/lib/copy/states";
-import { formatPrice } from "@/lib/format";
+import { curatorFeeConsent, curatorFeeNotYetLive } from "@/lib/copy/curator-fee";
+import { formatPrice, formatUsd } from "@/lib/format";
 import { useNow } from "@/lib/use-now";
 import { useResource } from "@/lib/use-resource";
 
 function Consent({
   preview,
-  venue,
+  environment,
   onApprove,
   busy,
 }: {
   preview: PreviewResult;
-  venue: string;
+  environment: Environment;
   onApprove: () => void;
   busy: boolean;
 }) {
+  const venue = venueName[environment];
   const now = useNow(500);
   if (preview.decision.outcome === "BLOCKED") {
     return null;
   }
   const expired = now >= preview.expiresAt;
-  const { quantity, limitPrice } = preview.decision.proposal;
+  const { quantity, limitPrice, curatorFee, costs } = preview.decision.proposal;
   return (
     <div className="flex flex-col items-start gap-4 border-t border-ink pt-5">
       <p className="t-body">
@@ -47,6 +50,14 @@ function Consent({
         attached on {venue}. Cadence checks again just before sending. If anything changed, nothing
         is sent. This is not permission for future plans.
       </p>
+      {curatorFee === null ? null : (
+        <p className="t-body">{curatorFeeConsent(curatorFee, formatUsd(costs.curatorFee))}</p>
+      )}
+      {curatorFee !== null && environment === "live" ? (
+        <p className="t-body rounded-card border border-ink bg-butter p-4">
+          {curatorFeeNotYetLive}
+        </p>
+      ) : null}
       <ActionButton onClick={onApprove} disabled={expired || busy}>
         {busy ? "Approving…" : "Approve this plan"}
       </ActionButton>
@@ -60,6 +71,11 @@ function Consent({
     </div>
   );
 }
+
+const offersReplayConnect = (plan: PublicPlan, preview: PreviewResult) =>
+  plan.current.plan.environment === "replay" &&
+  plan.current.plan.curatorFee !== undefined &&
+  (preview.decision.outcome === "BLOCKED" || preview.decision.proposal.curatorFee === null);
 
 function PreviewFlow({ plan }: { plan: PublicPlan }) {
   const navigate = useNavigate();
@@ -128,9 +144,17 @@ function PreviewFlow({ plan }: { plan: PublicPlan }) {
       {preview !== null ? (
         <>
           <DecisionPanel decision={preview.decision} plan={plan.current.plan} />
+          {offersReplayConnect(plan, preview) ? (
+            <Link
+              to={`/account?plan=${encodeURIComponent(plan.publicId)}`}
+              className="t-body underline underline-offset-4"
+            >
+              Add a replay account under the curator’s builder code
+            </Link>
+          ) : null}
           <Consent
             preview={preview}
-            venue={venueName[plan.current.plan.environment]}
+            environment={plan.current.plan.environment}
             busy={busy}
             onApprove={() => void approve(preview.previewId)}
           />
